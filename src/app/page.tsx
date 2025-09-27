@@ -196,6 +196,96 @@ export default function HomePage() {
           setValueFunc(newElements);
         },
       },
+      addMultipleElements: {
+        name: 'addMultipleElements',
+        description: 'Add multiple Excalidraw elements to the canvas at once',
+        execute: (current: any[], setValueFunc: any, args: any) => {
+          console.log('🎯 ADD_MULTIPLE_ELEMENTS EXECUTE CALLED:', { current, args });
+
+          // Extract the elements array from backend args
+          const elementsToAdd = args?.elements || [];
+          console.log('📦 Elements to add:', elementsToAdd.length, 'elements');
+
+          if (!Array.isArray(elementsToAdd) || elementsToAdd.length === 0) {
+            console.warn('⚠️ No elements to add');
+            return;
+          }
+
+          // Process each element to ensure proper Excalidraw format
+          const processedElements = elementsToAdd.map((elementData: any) => {
+            // Common element properties
+            const baseElement = {
+              version: 1,
+              versionNonce: Math.floor(Math.random() * 1000000),
+              isDeleted: false,
+              id: elementData.id || `elem_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`,
+              fillStyle: elementData.fillStyle || 'solid',
+              strokeWidth: elementData.strokeWidth || 2,
+              strokeStyle: 'solid',
+              roughness: elementData.roughness || 0,
+              opacity: elementData.opacity ? Math.round(elementData.opacity * 100) : 100,
+              angle: elementData.angle || 0,
+              x: elementData.x || 100,
+              y: elementData.y || 100,
+              strokeColor: elementData.strokeColor || '#000000',
+              backgroundColor: elementData.backgroundColor || 'transparent',
+              seed: Math.floor(Math.random() * 1000000),
+              groupIds: [],
+              frameId: null,
+              updated: 1,
+              link: null,
+              locked: false,
+            };
+
+            // Type-specific properties
+            if (elementData.type === 'rectangle') {
+              return {
+                ...baseElement,
+                type: 'rectangle',
+                width: elementData.width || 200,
+                height: elementData.height || 150,
+                roundness: { type: 3 },
+                boundElements: null,
+              };
+            } else if (elementData.type === 'text') {
+              return {
+                ...baseElement,
+                type: 'text',
+                width: elementData.width || 100,
+                height: elementData.height || 20,
+                text: elementData.text || '',
+                fontSize: elementData.fontSize || 20,
+                fontFamily: elementData.fontFamily || 1,
+                textAlign: elementData.textAlign || 'left',
+                verticalAlign: elementData.verticalAlign || 'top',
+                containerId: null,
+                originalText: elementData.text || '',
+              };
+            } else if (elementData.type === 'line') {
+              return {
+                ...baseElement,
+                type: 'line',
+                width: elementData.width || 100,
+                height: elementData.height || 0,
+                points: elementData.points || [[0, 0], [100, 0]],
+                lastCommittedPoint: null,
+                startBinding: null,
+                endBinding: null,
+                startArrowhead: null,
+                endArrowhead: null,
+              };
+            }
+
+            console.warn('⚠️ Unknown element type:', elementData.type);
+            return null;
+          }).filter(Boolean); // Remove null elements
+
+          const newElements = [...current, ...processedElements];
+          console.log('🚀 About to add', processedElements.length, 'elements. Total:', newElements.length);
+
+          setValueFunc(newElements);
+        },
+      },
     }
   });
 
