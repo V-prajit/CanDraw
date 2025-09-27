@@ -48,12 +48,14 @@ export const apiRoutes = [
         if (done) break;
         chunks.push(value);
       }
-      const audioBase64 = Buffer.from(new Uint8Array(chunks.flatMap(chunk => Array.from(chunk)))).toString('base64');
+      const audioBuffer = Buffer.concat(chunks);
+      const audioBase64 = audioBuffer.toString('base64');
+      const audioDataUri = `data:audio/mpeg;base64,${audioBase64}`;
 
       return c.json({
-        audio: audioBase64,
+        audio: audioDataUri,
         transcription: result.result.transcription,
-        responseText: result.result.responseText,
+        content: result.result.responseText,
       });
     },
   }),
