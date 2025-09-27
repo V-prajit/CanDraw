@@ -25,6 +25,13 @@ export default function HomePage() {
   // ✅ Manage state locally with React
   const [excalidrawElements, setExcalidrawElements] = React.useState<any[]>([]);
 
+  // Add state management tracking
+  const lastUpdateRef = React.useRef<{ timestamp: number; source: string; count: number }>({
+    timestamp: Date.now(),
+    source: 'init',
+    count: 0
+  });
+
   // Debug: Log when React state changes
   React.useEffect(() => {
     console.log('🔄 React state updated:', excalidrawElements.length, 'elements:', excalidrawElements);
@@ -42,40 +49,85 @@ export default function HomePage() {
     key: 'excalidrawElements',
     value: excalidrawElements,
     setValue: (newValue) => {
-      console.log('🔧 useRegisterState setValue called:', newValue);
-
-      // DEFENSIVE STATE MANAGEMENT: Prevent Cedar from overriding valid state
+      const now = Date.now();
       const currentCount = excalidrawElements.length;
       const newCount = Array.isArray(newValue) ? newValue.length : 0;
+      const timeSinceLastUpdate = now - lastUpdateRef.current.timestamp;
 
-      // Detect potential Cedar state override (fewer elements than current)
-      if (newCount < currentCount && currentCount > 0) {
-        console.warn('🚨 PREVENTING STATE OVERRIDE:', {
-          reason: 'Cedar trying to reduce element count',
-          current: currentCount,
-          attempted: newCount,
-          currentElements: excalidrawElements.map(el => ({id: el.id, type: el.type})),
-          attemptedElements: Array.isArray(newValue) ? newValue.map(el => ({id: el?.id, type: el?.type})) : []
-        });
+      console.log('🔧 useRegisterState setValue called:', {
+        newCount,
+        currentCount,
+        timeSinceLastUpdate,
+        lastSource: lastUpdateRef.current.source
+      });
 
-        // Only allow the override if the new value is completely empty (user cleared canvas)
-        if (newCount === 0) {
-          console.log('🧹 Allowing complete state clear (user action)');
-          setExcalidrawElements(newValue);
-        } else {
-          console.log('🛡️ BLOCKED: Rejecting partial state reduction');
-          // Don't update React state - keep current elements
-          return;
-        }
-      } else {
-        // Normal case: same count or increase in elements
-        console.log('✅ Accepting state update:', {
+      // IMPROVED STATE MANAGEMENT: Smarter conflict detection
+
+      // Case 1: Complete clear (user action) - always allow
+      if (newCount === 0) {
+        console.log('🧹 Allowing complete state clear (user action)');
+        lastUpdateRef.current = { timestamp: now, source: 'clear', count: newCount };
+        setExcalidrawElements(newValue);
+        return;
+      }
+
+      // Case 2: Normal increase or same count - always allow
+      if (newCount >= currentCount) {
+        console.log('✅ Accepting state update (increase/same):', {
           from: currentCount,
           to: newCount,
           change: newCount - currentCount
         });
+        lastUpdateRef.current = { timestamp: now, source: 'increase', count: newCount };
         setExcalidrawElements(newValue);
+        return;
       }
+
+      // Case 3: Reduction in elements - need to be careful
+      const isRecentUpdate = timeSinceLastUpdate < 2000; // 2 seconds
+      const isSignificantReduction = (currentCount - newCount) > 5; // More than 5 elements
+      const isFromProgrammaticUpdate = lastUpdateRef.current.source.includes('programmatic') ||
+                                      lastUpdateRef.current.source.includes('tool');
+
+      // Allow reduction if it's recent and not a significant loss
+      if (isRecentUpdate && !isSignificantReduction) {
+        console.log('✅ Allowing minor recent reduction:', {
+          from: currentCount,
+          to: newCount,
+          change: newCount - currentCount,
+          reason: 'Recent minor change'
+        });
+        lastUpdateRef.current = { timestamp: now, source: 'minor_reduction', count: newCount };
+        setExcalidrawElements(newValue);
+        return;
+      }
+
+      // Allow reduction if it seems to be part of a programmatic sequence
+      if (isFromProgrammaticUpdate && isRecentUpdate) {
+        console.log('✅ Allowing programmatic sequence reduction:', {
+          from: currentCount,
+          to: newCount,
+          change: newCount - currentCount,
+          reason: 'Part of programmatic update sequence'
+        });
+        lastUpdateRef.current = { timestamp: now, source: 'programmatic_sequence', count: newCount };
+        setExcalidrawElements(newValue);
+        return;
+      }
+
+      // Block significant unexpected reductions
+      console.warn('🚨 BLOCKING SIGNIFICANT STATE REDUCTION:', {
+        reason: 'Unexpected significant element loss',
+        current: currentCount,
+        attempted: newCount,
+        timeSinceLastUpdate,
+        lastSource: lastUpdateRef.current.source,
+        currentElements: excalidrawElements.slice(0, 3).map(el => ({id: el.id, type: el.type})),
+        attemptedElements: Array.isArray(newValue) ? newValue.slice(0, 3).map(el => ({id: el?.id, type: el?.type})) : []
+      });
+
+      // Don't update React state - keep current elements
+      return;
     },
     description: 'The elements on the Excalidraw canvas',
     stateSetters: {
@@ -152,9 +204,14 @@ export default function HomePage() {
           const timestamp = Date.now();
           const uniqueIndex = Math.floor(Math.random() * 1000000);
 
-          const newElement = {
-            id: elementData.id || `rect_${timestamp}_${uniqueIndex}`,
-            type: 'rectangle',
+          // Determine element type from backend data
+          const elementType = elementData.type || 'rectangle';
+          console.log('🔧 Creating element of type:', elementType);
+
+          // Base properties common to all elements
+          const baseElement = {
+            id: elementData.id || `${elementType}_${timestamp}_${uniqueIndex}`,
+            type: elementType,
             version: elementData.version || 1,
             versionNonce: elementData.versionNonce || Math.floor(Math.random() * 2147483647),
             isDeleted: false,
@@ -173,12 +230,44 @@ export default function HomePage() {
             seed: elementData.seed || Math.floor(Math.random() * 2147483647),
             groupIds: elementData.groupIds || [],
             frameId: elementData.frameId || null,
-            roundness: elementData.roundness || { type: 3 },
             boundElements: elementData.boundElements || null,
             updated: elementData.updated || 1,
             link: elementData.link || null,
             locked: elementData.locked || false
           };
+
+          // Add type-specific properties
+          let newElement;
+          if (elementType === 'arrow') {
+            newElement = {
+              ...baseElement,
+              points: elementData.points || [[0, 0], [100, 0]],
+              lastCommittedPoint: elementData.lastCommittedPoint || null,
+              startBinding: elementData.startBinding || null,
+              endBinding: elementData.endBinding || null,
+              startArrowhead: elementData.startArrowhead || null,
+              endArrowhead: elementData.endArrowhead || 'arrow',
+            };
+          } else if (elementType === 'text') {
+            newElement = {
+              ...baseElement,
+              text: elementData.text || '',
+              fontSize: elementData.fontSize || 20,
+              fontFamily: elementData.fontFamily || 1,
+              textAlign: elementData.textAlign || 'left',
+              verticalAlign: elementData.verticalAlign || 'top',
+              baseline: elementData.baseline || elementData.fontSize || 20,
+              containerId: elementData.containerId || null,
+              originalText: elementData.originalText || elementData.text || '',
+              lineHeight: elementData.lineHeight || 1.25,
+            };
+          } else {
+            // Default to rectangle-type element
+            newElement = {
+              ...baseElement,
+              roundness: elementData.roundness || { type: 3 },
+            };
+          }
 
           const newElements = [...current, newElement];
           console.log('🚀 About to call setValueFunc with:', newElements);
@@ -193,7 +282,12 @@ export default function HomePage() {
             elementAdded: newElements.length === current.length + 1
           });
 
-          // Call setValueFunc (which will trigger setValue callback with defensive logic)
+          // Mark this as a programmatic update and call setValueFunc
+          lastUpdateRef.current = {
+            timestamp: Date.now(),
+            source: 'programmatic_addElement',
+            count: newElements.length
+          };
           setValueFunc(newElements);
         },
       },
@@ -313,6 +407,12 @@ export default function HomePage() {
           const newElements = [...current, ...processedElements];
           console.log('🚀 About to add', processedElements.length, 'elements. Total:', newElements.length);
 
+          // Mark this as a programmatic update and call setValueFunc
+          lastUpdateRef.current = {
+            timestamp: Date.now(),
+            source: 'programmatic_addMultipleElements',
+            count: newElements.length
+          };
           setValueFunc(newElements);
         },
       },

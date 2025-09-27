@@ -437,6 +437,257 @@ export const createDatabaseTableTool = createMastraToolForStateSetter(
   },
 );
 
+/* ---------------- NEW: Connect Tables with Arrow Tool ---------------- */
+
+/**
+ * Schema for connecting two tables with a relationship arrow.
+ * Creates arrows that represent foreign key relationships and other UML connections.
+ */
+export const ConnectTablesArrowSchema = z
+  .object({
+    // Source and target positions
+    sourceX: z.number().describe('X coordinate of the source table center or edge'),
+    sourceY: z.number().describe('Y coordinate of the source table center or edge'),
+    targetX: z.number().describe('X coordinate of the target table center or edge'),
+    targetY: z.number().describe('Y coordinate of the target table center or edge'),
+
+    // Relationship type
+    relationshipType: z
+      .enum(['one-to-one', 'one-to-many', 'many-to-one', 'many-to-many', 'simple'])
+      .default('simple')
+      .describe('Type of database relationship'),
+
+    // Styling
+    strokeColor: z.string().default('#1976d2').describe('Arrow color'),
+    strokeWidth: z.number().default(2).describe('Arrow thickness'),
+    label: z.string().optional().describe('Optional relationship label'),
+
+    // Advanced/optional
+    id: z.string().optional().describe('Optional custom arrow id'),
+  })
+  .transform((args) => {
+    const now = Date.now();
+    const random = Math.random().toString(36).substr(2, 9);
+
+    console.log('🔧 ConnectTablesArrowSchema.transform() called with args:', args);
+
+    // Ensure defaults are applied
+    const safeArgs = args || {};
+    const processedArgs = {
+      sourceX: safeArgs.sourceX ?? 100,
+      sourceY: safeArgs.sourceY ?? 100,
+      targetX: safeArgs.targetX ?? 300,
+      targetY: safeArgs.targetY ?? 100,
+      relationshipType: safeArgs.relationshipType ?? 'simple',
+      strokeColor: safeArgs.strokeColor ?? '#1976d2',
+      strokeWidth: safeArgs.strokeWidth ?? 2,
+      label: safeArgs.label,
+      id: safeArgs.id ?? `arrow_${now}_${random}`,
+    };
+
+    // Calculate arrow points and dimensions
+    const deltaX = processedArgs.targetX - processedArgs.sourceX;
+    const deltaY = processedArgs.targetY - processedArgs.sourceY;
+
+    // Create points array for arrow (relative to arrow's x,y position)
+    const points = [
+      [0, 0], // Start point (relative to arrow position)
+      [deltaX, deltaY], // End point (relative to arrow position)
+    ];
+
+    // Determine arrowhead style based on relationship type
+    let startArrowhead = null;
+    let endArrowhead = 'arrow';
+
+    if (processedArgs.relationshipType === 'one-to-many') {
+      startArrowhead = null; // One side - no arrowhead
+      endArrowhead = 'arrow'; // Many side - standard arrow
+    } else if (processedArgs.relationshipType === 'many-to-one') {
+      startArrowhead = 'arrow'; // Many side - arrow
+      endArrowhead = null; // One side - no arrowhead
+    } else if (processedArgs.relationshipType === 'many-to-many') {
+      startArrowhead = 'arrow'; // Both sides have arrows
+      endArrowhead = 'arrow';
+    } else if (processedArgs.relationshipType === 'one-to-one') {
+      startArrowhead = null; // Clean line for 1:1
+      endArrowhead = null;
+    } else {
+      // 'simple' - standard arrow
+      startArrowhead = null;
+      endArrowhead = 'arrow';
+    }
+
+    const result = {
+      newElement: {
+        id: processedArgs.id,
+        type: 'arrow',
+        x: processedArgs.sourceX, // Arrow position starts at source
+        y: processedArgs.sourceY,
+        width: Math.abs(deltaX), // Calculate proper width/height for bounding box
+        height: Math.abs(deltaY),
+        angle: 0,
+        strokeColor: processedArgs.strokeColor,
+        backgroundColor: 'transparent',
+        fillStyle: 'solid',
+        strokeWidth: processedArgs.strokeWidth,
+        roughness: 0, // Clean arrows for database diagrams
+        opacity: 1,
+        points: points,
+        lastCommittedPoint: null,
+        startBinding: null, // Could be enhanced to bind to table elements
+        endBinding: null,
+        startArrowhead: startArrowhead,
+        endArrowhead: endArrowhead,
+      },
+    };
+
+    console.log('🚀 ConnectTablesArrowSchema.transform() returning:', result);
+    console.log('🚀 Arrow type:', processedArgs.relationshipType, 'Start:', startArrowhead, 'End:', endArrowhead);
+
+    return result;
+  });
+
+export const connectTablesArrowTool = createMastraToolForStateSetter(
+  'excalidrawElements',    // state key
+  'addElement',            // state setter name on the frontend
+  ConnectTablesArrowSchema,
+  {
+    description:
+      'Connect two database tables with a relationship arrow. Supports different UML relationship types and automatically positions arrows between table coordinates.',
+    toolId: 'connectTablesArrow',
+    streamEventFn: streamJSONEvent,
+    errorSchema: ErrorResponseSchema,
+  },
+);
+
+/* ---------------- NEW: Add Relationship Arrow Tool ---------------- */
+
+/**
+ * Schema for adding standalone relationship arrows.
+ * More flexible than connectTablesArrow - allows custom positioning and styling.
+ */
+export const AddRelationshipArrowSchema = z
+  .object({
+    // Start and end coordinates
+    startX: z.number().default(100).describe('Arrow start X coordinate'),
+    startY: z.number().default(100).describe('Arrow start Y coordinate'),
+    endX: z.number().default(200).describe('Arrow end X coordinate'),
+    endY: z.number().default(100).describe('Arrow end Y coordinate'),
+
+    // Arrow styling
+    arrowType: z
+      .enum(['simple', 'double', 'none'])
+      .default('simple')
+      .describe('Arrow head style'),
+    strokeColor: z.string().default('#1976d2').describe('Arrow color'),
+    strokeWidth: z.number().default(2).describe('Arrow thickness'),
+    style: z
+      .enum(['solid', 'dashed', 'dotted'])
+      .default('solid')
+      .describe('Line style'),
+
+    // Optional label
+    label: z.string().optional().describe('Optional arrow label'),
+    labelPosition: z
+      .enum(['start', 'middle', 'end'])
+      .default('middle')
+      .describe('Label position along arrow'),
+
+    // Advanced/optional
+    id: z.string().optional().describe('Optional custom arrow id'),
+  })
+  .transform((args) => {
+    const now = Date.now();
+    const random = Math.random().toString(36).substr(2, 9);
+
+    console.log('🔧 AddRelationshipArrowSchema.transform() called with args:', args);
+
+    // Ensure defaults are applied
+    const safeArgs = args || {};
+    const processedArgs = {
+      startX: safeArgs.startX ?? 100,
+      startY: safeArgs.startY ?? 100,
+      endX: safeArgs.endX ?? 200,
+      endY: safeArgs.endY ?? 100,
+      arrowType: safeArgs.arrowType ?? 'simple',
+      strokeColor: safeArgs.strokeColor ?? '#1976d2',
+      strokeWidth: safeArgs.strokeWidth ?? 2,
+      style: safeArgs.style ?? 'solid',
+      label: safeArgs.label,
+      labelPosition: safeArgs.labelPosition ?? 'middle',
+      id: safeArgs.id ?? `rel_arrow_${now}_${random}`,
+    };
+
+    // Calculate arrow dimensions
+    const deltaX = processedArgs.endX - processedArgs.startX;
+    const deltaY = processedArgs.endY - processedArgs.startY;
+
+    // Create points array (relative to arrow position)
+    const points = [[0, 0], [deltaX, deltaY]];
+
+    // Determine arrowhead configuration
+    let startArrowhead = null;
+    let endArrowhead = null;
+
+    if (processedArgs.arrowType === 'simple') {
+      endArrowhead = 'arrow';
+    } else if (processedArgs.arrowType === 'double') {
+      startArrowhead = 'arrow';
+      endArrowhead = 'arrow';
+    }
+    // 'none' keeps both null
+
+    // Convert style to strokeStyle
+    const strokeStyleMap = {
+      solid: 'solid',
+      dashed: 'dashed',
+      dotted: 'dotted',
+    };
+
+    const result = {
+      newElement: {
+        id: processedArgs.id,
+        type: 'arrow',
+        x: processedArgs.startX,
+        y: processedArgs.startY,
+        width: Math.abs(deltaX),
+        height: Math.abs(deltaY),
+        angle: 0,
+        strokeColor: processedArgs.strokeColor,
+        backgroundColor: 'transparent',
+        fillStyle: 'solid',
+        strokeWidth: processedArgs.strokeWidth,
+        strokeStyle: strokeStyleMap[processedArgs.style],
+        roughness: 0, // Clean for UML diagrams
+        opacity: 1,
+        points: points,
+        lastCommittedPoint: null,
+        startBinding: null,
+        endBinding: null,
+        startArrowhead: startArrowhead,
+        endArrowhead: endArrowhead,
+      },
+    };
+
+    console.log('🚀 AddRelationshipArrowSchema.transform() returning:', result);
+    console.log('🚀 Arrow from:', `(${processedArgs.startX}, ${processedArgs.startY})`, 'to:', `(${processedArgs.endX}, ${processedArgs.endY})`);
+
+    return result;
+  });
+
+export const addRelationshipArrowTool = createMastraToolForStateSetter(
+  'excalidrawElements',    // state key
+  'addElement',            // state setter name on the frontend
+  AddRelationshipArrowSchema,
+  {
+    description:
+      'Add a standalone relationship arrow with custom positioning and styling. Ideal for creating custom UML relationships and annotations.',
+    toolId: 'addRelationshipArrow',
+    streamEventFn: streamJSONEvent,
+    errorSchema: ErrorResponseSchema,
+  },
+);
+
 /**
  * Registry of all available tools organized by category
  * This structure makes it easy to see tool organization and generate categorized descriptions
@@ -452,6 +703,11 @@ export const TOOL_REGISTRY = {
     addTextTool,
     createDatabaseTableTool,
   },
+  // NEW category for relationship tools
+  relationshipManipulation: {
+    connectTablesArrowTool,
+    addRelationshipArrowTool,
+  },
 };
 
 // Export all tools as an array for easy registration
@@ -461,4 +717,6 @@ export const ALL_TOOLS = [
   addRectangleTool, // NEW
   addTextTool, // NEW
   createDatabaseTableTool, // NEW
+  connectTablesArrowTool, // NEW
+  addRelationshipArrowTool, // NEW
 ];
