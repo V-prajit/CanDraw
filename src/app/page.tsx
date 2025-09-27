@@ -248,6 +248,97 @@ export default function HomePage() {
               startArrowhead: elementData.startArrowhead || null,
               endArrowhead: elementData.endArrowhead || 'arrow',
             };
+
+            // 🔧 ARROW BINDING ENHANCEMENT: Auto-detect and bind to tables
+            console.log('🔧 Processing arrow for auto-binding');
+
+            // Helper function to find table at coordinates
+            const findTableAtCoordinates = (x: number, y: number) => {
+              console.log(`🔍 Looking for table at coordinates (${x}, ${y}) among ${current.length} elements`);
+
+              // Look for table background elements (ID pattern: *_bg)
+              const tableElements = current.filter(el =>
+                el && el.id && el.id.endsWith('_bg') && el.type === 'rectangle'
+              );
+
+              console.log(`🔍 Found ${tableElements.length} table background elements:`,
+                tableElements.map(t => ({ id: t.id, x: t.x, y: t.y, w: t.width, h: t.height }))
+              );
+
+              // Check if coordinates fall within any table bounds
+              for (const table of tableElements) {
+                const withinBounds = (
+                  x >= table.x &&
+                  x <= table.x + table.width &&
+                  y >= table.y &&
+                  y <= table.y + table.height
+                );
+
+                console.log(`🔍 Checking table ${table.id}: bounds (${table.x}, ${table.y}, ${table.width}, ${table.height}) - match: ${withinBounds}`);
+
+                if (withinBounds) {
+                  console.log(`🎯 Found table at coordinates: ${table.id}`);
+                  return table;
+                }
+              }
+
+              console.log('❌ No table found at the given coordinates');
+              return null;
+            };
+
+            // Helper function to calculate binding focus
+            const calculateBindingFocus = (table: any, pointX: number, pointY: number) => {
+              const centerX = table.x + table.width / 2;
+              const centerY = table.y + table.height / 2;
+              const dx = pointX - centerX;
+              const dy = pointY - centerY;
+
+              let focus: number;
+              if (Math.abs(dx) / table.width > Math.abs(dy) / table.height) {
+                focus = dy / table.height; // Vertical edge
+              } else {
+                focus = dx / table.width;  // Horizontal edge
+              }
+
+              return Math.max(-0.5, Math.min(0.5, focus));
+            };
+
+            // Calculate arrow coordinates from points
+            const startX = newElement.x;
+            const startY = newElement.y;
+            const points = newElement.points || [[0, 0], [100, 0]];
+            const endX = startX + (points[1]?.[0] || 100);
+            const endY = startY + (points[1]?.[1] || 0);
+
+            console.log('🎯 Arrow coordinates:', { startX, startY, endX, endY });
+
+            // Auto-detect source table if no binding exists
+            if (!newElement.startBinding) {
+              const sourceTable = findTableAtCoordinates(startX, startY);
+              if (sourceTable) {
+                const focus = calculateBindingFocus(sourceTable, endX, endY);
+                newElement.startBinding = {
+                  elementId: sourceTable.id,
+                  focus: focus,
+                  gap: 4
+                };
+                console.log('🔗 Created auto start binding:', newElement.startBinding);
+              }
+            }
+
+            // Auto-detect target table if no binding exists
+            if (!newElement.endBinding) {
+              const targetTable = findTableAtCoordinates(endX, endY);
+              if (targetTable) {
+                const focus = calculateBindingFocus(targetTable, startX, startY);
+                newElement.endBinding = {
+                  elementId: targetTable.id,
+                  focus: focus,
+                  gap: 4
+                };
+                console.log('🔗 Created auto end binding:', newElement.endBinding);
+              }
+            }
           } else if (elementType === 'text') {
             newElement = {
               ...baseElement,
@@ -269,7 +360,41 @@ export default function HomePage() {
             };
           }
 
-          const newElements = [...current, newElement];
+          // 🔧 BIDIRECTIONAL BINDING: Update boundElements on target shapes
+          let updatedCurrent = current;
+          if (elementType === 'arrow' && (newElement.startBinding || newElement.endBinding)) {
+            console.log('🔧 Updating boundElements for arrow binding');
+
+            updatedCurrent = current.map(element => {
+              // Check if this element is a binding target
+              const isStartTarget = newElement.startBinding?.elementId === element.id;
+              const isEndTarget = newElement.endBinding?.elementId === element.id;
+
+              if (!isStartTarget && !isEndTarget) {
+                return element; // No change needed
+              }
+
+              // Update boundElements array
+              const currentBoundElements = Array.isArray(element.boundElements) ? element.boundElements : [];
+              const alreadyBound = currentBoundElements.some(bound => bound?.id === newElement.id);
+
+              if (alreadyBound) {
+                console.log(`⚠️ Arrow ${newElement.id} already bound to ${element.id}`);
+                return element; // Already bound
+              }
+
+              const newBoundElement = { id: newElement.id, type: 'arrow' };
+              const updatedElement = {
+                ...element,
+                boundElements: [...currentBoundElements, newBoundElement]
+              };
+
+              console.log(`🔗 Added arrow ${newElement.id} to boundElements of ${element.id}`);
+              return updatedElement;
+            });
+          }
+
+          const newElements = [...updatedCurrent, newElement];
           console.log('🚀 About to call setValueFunc with:', newElements);
           console.log('📍 New element position:', { x: newElement.x, y: newElement.y, width: newElement.width, height: newElement.height });
 

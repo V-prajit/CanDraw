@@ -466,6 +466,9 @@ export const ConnectTablesArrowSchema = z
     strokeWidth: z.number().default(2).describe('Arrow thickness'),
     label: z.string().optional().describe('Optional relationship label'),
 
+    // Table detection (optional - for auto-binding)
+    existingElements: z.array(z.record(z.unknown())).optional().describe('Current canvas elements for auto-detecting tables at coordinates'),
+
     // Advanced/optional
     id: z.string().optional().describe('Optional custom arrow id'),
   })
@@ -488,8 +491,48 @@ export const ConnectTablesArrowSchema = z
       strokeColor: safeArgs.strokeColor ?? '#1976d2',
       strokeWidth: safeArgs.strokeWidth ?? 2,
       label: safeArgs.label,
+      existingElements: safeArgs.existingElements,
       id: safeArgs.id ?? `arrow_${now}_${random}`,
     };
+
+    // Helper function to find table at given coordinates
+    function findTableAtCoordinates(x, y, existingElements) {
+      if (!existingElements || !Array.isArray(existingElements)) {
+        console.log('🔍 No existing elements provided for table detection');
+        return null;
+      }
+
+      console.log(`🔍 Looking for table at coordinates (${x}, ${y}) among ${existingElements.length} elements`);
+
+      // Look for table background elements (ID pattern: *_bg)
+      const tableElements = existingElements.filter(el =>
+        el && el.id && el.id.endsWith('_bg') && el.type === 'rectangle'
+      );
+
+      console.log(`🔍 Found ${tableElements.length} table background elements:`,
+        tableElements.map(t => ({ id: t.id, x: t.x, y: t.y, w: t.width, h: t.height }))
+      );
+
+      // Check if coordinates fall within any table bounds
+      for (const table of tableElements) {
+        const withinBounds = (
+          x >= table.x &&
+          x <= table.x + table.width &&
+          y >= table.y &&
+          y <= table.y + table.height
+        );
+
+        console.log(`🔍 Checking table ${table.id}: bounds (${table.x}, ${table.y}, ${table.width}, ${table.height}) - match: ${withinBounds}`);
+
+        if (withinBounds) {
+          console.log(`🎯 Found table at coordinates: ${table.id}`);
+          return table.id;
+        }
+      }
+
+      console.log('❌ No table found at the given coordinates');
+      return null;
+    }
 
     // Calculate arrow points and dimensions
     const deltaX = processedArgs.targetX - processedArgs.sourceX;
@@ -527,15 +570,39 @@ export const ConnectTablesArrowSchema = z
     let startBinding = null;
     let endBinding = null;
 
-    // For now, we'll use the provided table IDs if available
-    // Or create bindings based on coordinate patterns for future enhancement
+    // Auto-detect table IDs if not provided and existingElements available
+    if (!processedArgs.sourceTableId && processedArgs.existingElements) {
+      const detectedSourceTableId = findTableAtCoordinates(
+        processedArgs.sourceX,
+        processedArgs.sourceY,
+        processedArgs.existingElements
+      );
+      if (detectedSourceTableId) {
+        processedArgs.sourceTableId = detectedSourceTableId;
+        console.log('🎯 Auto-detected source table:', detectedSourceTableId);
+      }
+    }
+
+    if (!processedArgs.targetTableId && processedArgs.existingElements) {
+      const detectedTargetTableId = findTableAtCoordinates(
+        processedArgs.targetX,
+        processedArgs.targetY,
+        processedArgs.existingElements
+      );
+      if (detectedTargetTableId) {
+        processedArgs.targetTableId = detectedTargetTableId;
+        console.log('🎯 Auto-detected target table:', detectedTargetTableId);
+      }
+    }
+
+    // Create bindings using explicit or detected table IDs
     if (processedArgs.sourceTableId) {
       startBinding = {
         elementId: processedArgs.sourceTableId,
         focus: 0.5, // Middle of the edge
         gap: 0
       };
-      console.log('🔗 Created start binding with explicit ID:', startBinding);
+      console.log('🔗 Created start binding with table ID:', startBinding);
     }
 
     if (processedArgs.targetTableId) {
@@ -544,7 +611,7 @@ export const ConnectTablesArrowSchema = z
         focus: 0.5, // Middle of the edge
         gap: 0
       };
-      console.log('🔗 Created end binding with explicit ID:', endBinding);
+      console.log('🔗 Created end binding with table ID:', endBinding);
     }
 
     // Log available context for debugging
@@ -572,8 +639,8 @@ export const ConnectTablesArrowSchema = z
         opacity: 1,
         points: points,
         lastCommittedPoint: null,
-        startBinding: startBinding, // Now properly bound to table elements
-        endBinding: endBinding,
+        start: processedArgs.sourceTableId ? { id: processedArgs.sourceTableId } : undefined,
+        end: processedArgs.targetTableId ? { id: processedArgs.targetTableId } : undefined,
         startArrowhead: startArrowhead,
         endArrowhead: endArrowhead,
       },
@@ -581,6 +648,12 @@ export const ConnectTablesArrowSchema = z
 
     console.log('🚀 ConnectTablesArrowSchema.transform() returning:', result);
     console.log('🚀 Arrow type:', processedArgs.relationshipType, 'Start:', startArrowhead, 'End:', endArrowhead);
+    console.log('🔗 Final binding:', {
+      sourceTableId: processedArgs.sourceTableId,
+      targetTableId: processedArgs.targetTableId,
+      start: result.newElement.start,
+      end: result.newElement.end
+    });
 
     return result;
   });
