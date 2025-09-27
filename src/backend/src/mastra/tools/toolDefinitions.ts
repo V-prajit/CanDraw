@@ -57,6 +57,74 @@ export const changeTextTool = createMastraToolForStateSetter(
 
 export const requestAdditionalContextTool = createRequestAdditionalContextTool();
 
+/* ---------------- NEW: Rectangle tool ---------------- */
+
+/**
+ * Accepts simple rectangle specs from the agent and transforms them into the
+ * frontend setter args shape: { newElement: <ExcalidrawElement> }.
+ *
+ * Notes:
+ * - Defaults keep the tool usable with minimal prompts ("add a rectangle").
+ * - The structure matches your Excalidraw element reference.
+ */
+export const AddRectangleSchema = z
+  .object({
+    // position & size
+    x: z.number().default(100).describe('Left (x) position in pixels'),
+    y: z.number().default(100).describe('Top (y) position in pixels'),
+    width: z.number().default(200).describe('Rectangle width in pixels'),
+    height: z.number().default(150).describe('Rectangle height in pixels'),
+
+    // styling
+    angle: z.number().optional().default(0).describe('Rotation in radians'),
+    strokeColor: z.string().optional().default('#000000').describe('Stroke (border) color'),
+    backgroundColor: z.string().optional().default('#ffffff').describe('Fill color'),
+    fillStyle: z
+      .enum(['solid', 'hachure', 'cross-hatch'])
+      .optional()
+      .default('solid')
+      .describe('Fill style'),
+    strokeWidth: z.number().optional().default(2).describe('Stroke thickness'),
+    roughness: z.number().min(0).max(2).optional().default(1).describe('Sketchiness 0–2'),
+    opacity: z.number().min(0).max(1).optional().default(1).describe('Opacity 0–1'),
+
+    // advanced/optional
+    id: z.string().optional().describe('Optional custom element id'),
+  })
+  .transform((args) => {
+    const now = Date.now();
+    return {
+      newElement: {
+        id: args.id ?? `rect_${now}`,
+        type: 'rectangle',
+        x: args.x,
+        y: args.y,
+        width: args.width,
+        height: args.height,
+        angle: args.angle ?? 0,
+        strokeColor: args.strokeColor ?? '#000000',
+        backgroundColor: args.backgroundColor ?? '#ffffff',
+        fillStyle: args.fillStyle ?? 'solid',
+        strokeWidth: args.strokeWidth ?? 2,
+        roughness: args.roughness ?? 1,
+        opacity: args.opacity ?? 1,
+      },
+    };
+  });
+
+export const addRectangleTool = createMastraToolForStateSetter(
+  'excalidrawElements',    // state key
+  'addElement',            // state setter name on the frontend
+  AddRectangleSchema,      // Zod schema that transforms to { newElement }
+  {
+    description:
+      'Spawn a rectangle on the Excalidraw canvas at (x, y) with given dimensions and optional style.',
+    toolId: 'addRectangle',
+    streamEventFn: streamJSONEvent,
+    errorSchema: ErrorResponseSchema,
+  },
+);
+
 /**
  * Registry of all available tools organized by category
  * This structure makes it easy to see tool organization and generate categorized descriptions
@@ -66,7 +134,15 @@ export const TOOL_REGISTRY = {
     changeTextTool,
     addNewTextLineTool,
   },
+  // NEW category for shape tools
+  shapeManipulation: {
+    addRectangleTool,
+  },
 };
 
 // Export all tools as an array for easy registration
-export const ALL_TOOLS = [changeTextTool, addNewTextLineTool];
+export const ALL_TOOLS = [
+  changeTextTool,
+  addNewTextLineTool,
+  addRectangleTool, // NEW
+];
