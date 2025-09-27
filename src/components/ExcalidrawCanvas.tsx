@@ -8,120 +8,160 @@ type Props = {
   onElementsChange: (els: any[]) => void;
 };
 
+// Helper function to create a stable hash of elements for comparison
+const getElementsHash = (elements: any[]): string => {
+  return elements.map(el => `${el.id}:${el.type}:${el.x}:${el.y}:${el.version || 0}`).join('|');
+};
+
+// Helper function to deep compare element arrays
+const elementsEqual = (a: any[], b: any[]): boolean => {
+  if (a.length !== b.length) return false;
+  return getElementsHash(a) === getElementsHash(b);
+};
+
 const ExcalidrawCanvas: React.FC<Props> = ({ elements, onElementsChange }) => {
   const apiRef = useRef<ExcalidrawImperativeAPI | null>(null);
 
-  // Avoid feedback loops: if we push a scene, ignore the resulting onChange once.
-  const pushingSceneRef = useRef(false);
+  // Track the last scene we pushed to Excalidraw to prevent feedback loops
+  const lastPushedElementsRef = useRef<any[]>([]);
+  const lastPushedHashRef = useRef<string>('');
 
-  // Ignore the very first empty onChange after (re)mount.
+  // Track the last elements received from Excalidraw onChange
+  const lastReceivedElementsRef = useRef<any[]>([]);
+  const lastReceivedHashRef = useRef<string>('');
+
+  // Ignore the very first empty onChange after mount
   const ignoreFirstEmptyRef = useRef(true);
+
+  // Debounce timeout for updateScene calls
+  const updateSceneTimeoutRef = useRef<NodeJS.Timeout | null>(null);
+
+  // Track if we're currently updating to prevent cascading updates
+  const isUpdatingRef = useRef(false);
 
   // Only provide initialData once (mount-time). After that, use updateScene().
   const initialData = useMemo(() => ({ elements }), []); // freeze on first render
 
-  // NUCLEAR STATE PROTECTION: Persistent element cache
-  const elementCacheRef = useRef<any[]>([]);
-  const lastValidCountRef = useRef(0);
-  const resetDetectionRef = useRef(false);
-
   const handleChange = useCallback((newEls: any[]) => {
     console.log("🔄 Excalidraw onChange fired with:", newEls.length, "elements");
 
-    // Some mounts emit an initial []; don't let that nuke host state.
+    // Ignore first empty onChange after mount
     if (ignoreFirstEmptyRef.current && newEls.length === 0) {
       console.log("🚫 Ignoring first empty onChange after mount");
       return;
     }
+    ignoreFirstEmptyRef.current = false;
 
-    // If this onChange was triggered by our own updateScene, skip it.
-    if (pushingSceneRef.current) {
-      console.log("🚫 Ignoring onChange from our own updateScene");
+    // Generate hash for the new elements
+    const newHash = getElementsHash(newEls);
+
+    // If these are the exact same elements we just pushed, ignore
+    if (newHash === lastPushedHashRef.current) {
+      console.log("🚫 Ignoring onChange - same as elements we just pushed");
       return;
     }
 
-    // NUCLEAR PROTECTION: Detect and prevent suspicious reductions
-    const prevCount = lastValidCountRef.current;
-    if (newEls.length < prevCount && prevCount > 0 && newEls.length >= 0) {
-      console.warn("🚨 NUCLEAR PROTECTION: Blocking suspicious element reduction", {
-        from: prevCount,
-        to: newEls.length,
-        cached: elementCacheRef.current.length,
-        action: 'restore_from_cache'
-      });
-
-      // Restore from cache instead of accepting the reduction
-      if (elementCacheRef.current.length > newEls.length) {
-        console.log("🛡️ RESTORING from element cache:", elementCacheRef.current.length, "elements");
-        onElementsChange(elementCacheRef.current);
-        return;
-      }
+    // If these are the same elements we just received, ignore
+    if (newHash === lastReceivedHashRef.current) {
+      console.log("🚫 Ignoring onChange - same as elements we just received");
+      return;
     }
 
-    // Update cache if elements increased
-    if (newEls.length > lastValidCountRef.current) {
-      console.log("📦 CACHING elements:", newEls.length);
-      elementCacheRef.current = [...newEls];
-      lastValidCountRef.current = newEls.length;
+    // If we're currently in an update cycle, ignore
+    if (isUpdatingRef.current) {
+      console.log("🚫 Ignoring onChange - update in progress");
+      return;
     }
 
+    console.log("✅ Valid onChange - propagating to parent", {
+      elementCount: newEls.length,
+      newHash: newHash.substring(0, 50) + '...',
+      lastPushedHash: lastPushedHashRef.current.substring(0, 50) + '...',
+      lastReceivedHash: lastReceivedHashRef.current.substring(0, 50) + '...'
+    });
+
+    // Update our tracking
+    lastReceivedElementsRef.current = [...newEls];
+    lastReceivedHashRef.current = newHash;
+
+    // Propagate to parent
     onElementsChange(newEls);
   }, [onElementsChange]);
 
-  // Track previous element count to detect suspicious reductions
-  const prevElementCountRef = useRef(0);
+  // Debounced updateScene function
+  const debouncedUpdateScene = useCallback((elementsToUpdate: any[]) => {
+    if (updateSceneTimeoutRef.current) {
+      clearTimeout(updateSceneTimeoutRef.current);
+    }
 
-  // After mount OR when host elements change, push them into the canvas.
-  useEffect(() => {
-    console.log("🎨 ExcalidrawCanvas received elements:", elements.length, "elements:", elements);
+    updateSceneTimeoutRef.current = setTimeout(() => {
+      if (!apiRef.current || isUpdatingRef.current) return;
 
-    // NUCLEAR PROTECTION: Detect and block external resets from Cedar SSE
-    const prevCount = prevElementCountRef.current;
-    const currentCount = elements.length;
-    const cachedCount = elementCacheRef.current.length;
+      const newHash = getElementsHash(elementsToUpdate);
 
-    // Detect suspicious reductions (likely Cedar SSE reset)
-    if (currentCount < prevCount && prevCount > 0 && currentCount >= 0) {
-      console.warn("⚠️ SUSPICIOUS: Element count reduced from external source:", {
-        from: prevCount,
-        to: currentCount,
-        reduction: prevCount - currentCount,
-        cachedElements: cachedCount,
-        suspiciousReset: true
-      });
+      // Only update if elements actually changed
+      if (newHash !== lastPushedHashRef.current) {
+        console.log("🚀 Pushing scene update with", elementsToUpdate.length, "elements");
 
-      // If we have more elements in cache, this is definitely a reset
-      if (cachedCount > currentCount && cachedCount === prevCount) {
-        console.error("🚨 CEDAR SSE RESET DETECTED! Ignoring update and keeping current scene");
+        isUpdatingRef.current = true;
+        lastPushedElementsRef.current = [...elementsToUpdate];
+        lastPushedHashRef.current = newHash;
 
-        // Don't update the scene - keep the current state
-        prevElementCountRef.current = prevCount; // Don't update the prev count
-        return; // Skip the updateScene call entirely
+        apiRef.current.updateScene({ elements: elementsToUpdate });
+
+        // Clear the updating flag after a brief delay
+        setTimeout(() => {
+          isUpdatingRef.current = false;
+        }, 50);
+      } else {
+        console.log("🚫 Skipping scene update - no changes detected");
       }
+
+      updateSceneTimeoutRef.current = null;
+    }, 10); // Very short debounce - just enough to prevent rapid calls
+  }, []);
+
+  // After mount OR when host elements change, push them into the canvas
+  useEffect(() => {
+    console.log("🎨 ExcalidrawCanvas received elements:", elements.length, "elements");
+
+    if (!apiRef.current) {
+      console.log("📋 API not ready yet, will update when available");
+      return;
     }
 
-    // Update cache when elements increase
-    if (currentCount > cachedCount) {
-      console.log("📦 UPDATING element cache:", currentCount, "elements");
-      elementCacheRef.current = [...elements];
-      lastValidCountRef.current = currentCount;
+    const currentHash = getElementsHash(elements);
+
+    // Only update if elements actually changed
+    if (currentHash === lastPushedHashRef.current) {
+      console.log("🚫 Skipping update - elements unchanged from our last push");
+      return;
     }
 
-    prevElementCountRef.current = currentCount;
+    // Only update if these aren't the same elements we just received from onChange
+    if (currentHash === lastReceivedHashRef.current) {
+      console.log("🚫 Skipping update - these elements came from Excalidraw onChange");
+      return;
+    }
 
-    if (!apiRef.current) return;
-
-    // After the first paint, we no longer ignore empty onChange
-    // once we've pushed the host scene at least once.
-    // Also guard against the initialData overwrite race.
-    pushingSceneRef.current = true;
-    console.log("🚀 Pushing scene update with", elements.length, "elements");
-    apiRef.current.updateScene({ elements });
-    queueMicrotask(() => {
-      pushingSceneRef.current = false;
-      ignoreFirstEmptyRef.current = false;
+    console.log("📤 Scheduling scene update", {
+      elementCount: elements.length,
+      currentHash: currentHash.substring(0, 50) + '...',
+      lastPushedHash: lastPushedHashRef.current.substring(0, 50) + '...',
+      lastReceivedHash: lastReceivedHashRef.current.substring(0, 50) + '...'
     });
-  }, [elements]);
+
+    debouncedUpdateScene(elements);
+  }, [elements, debouncedUpdateScene]);
+
+  // Cleanup timeout on unmount
+  useEffect(() => {
+    return () => {
+      if (updateSceneTimeoutRef.current) {
+        clearTimeout(updateSceneTimeoutRef.current);
+      }
+    };
+  }, []);
 
   return (
     <div style={{ height: "100%", width: "100%" }}>

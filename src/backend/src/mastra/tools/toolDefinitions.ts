@@ -201,8 +201,8 @@ export const AddTextSchema = z
         type: 'text',
         x: processedArgs.x,
         y: processedArgs.y,
-        width: processedArgs.text.length * (processedArgs.fontSize * 0.6), // Approximate width
-        height: processedArgs.fontSize * 1.2, // Approximate height
+        width: Math.max(50, processedArgs.text.length * (processedArgs.fontSize * 0.6)), // Minimum width with better calculation
+        height: processedArgs.fontSize * 1.4, // Better height calculation
         angle: 0,
         strokeColor: processedArgs.strokeColor,
         backgroundColor: processedArgs.backgroundColor,
@@ -215,6 +215,9 @@ export const AddTextSchema = z
         fontFamily: 1, // Default font family in Excalidraw
         textAlign: 'left',
         verticalAlign: 'top',
+        baseline: processedArgs.fontSize, // Add baseline for consistent text positioning
+        containerId: null, // Standalone text element
+        originalText: processedArgs.text, // Add original text property
       },
     };
 
@@ -291,6 +294,9 @@ export const CreateDatabaseTableSchema = z
     // Calculate total table height
     const totalHeight = processedArgs.headerHeight + (processedArgs.fields.length * processedArgs.fieldHeight);
 
+    // Create unique group ID for this table so all elements move together
+    const tableGroupId = `${processedArgs.tableId}_group`;
+
     // Create elements array
     const elements = [];
 
@@ -309,6 +315,7 @@ export const CreateDatabaseTableSchema = z
       strokeWidth: 2,
       roughness: 0, // Clean lines for database tables
       opacity: 1,
+      groupIds: [tableGroupId], // Group with other table elements
     });
 
     // 2. Header rectangle
@@ -326,16 +333,17 @@ export const CreateDatabaseTableSchema = z
       strokeWidth: 2,
       roughness: 0,
       opacity: 1,
+      groupIds: [tableGroupId], // Group with other table elements
     });
 
     // 3. Header text (table name)
     elements.push({
       id: `${processedArgs.tableId}_header_text`,
       type: 'text',
-      x: processedArgs.x + 10,
-      y: processedArgs.y + 8,
-      width: processedArgs.tableWidth - 20,
-      height: processedArgs.headerHeight - 16,
+      x: processedArgs.x + 10, // Left-aligned with padding for better visibility
+      y: processedArgs.y + 10, // Top-aligned with padding
+      width: processedArgs.tableWidth - 20, // Set explicit width
+      height: processedArgs.headerHeight - 20, // Set explicit height
       angle: 0,
       strokeColor: processedArgs.textColor,
       backgroundColor: 'transparent',
@@ -346,8 +354,12 @@ export const CreateDatabaseTableSchema = z
       text: processedArgs.tableName,
       fontSize: 16,
       fontFamily: 1,
-      textAlign: 'center',
-      verticalAlign: 'middle',
+      textAlign: 'left',
+      verticalAlign: 'top',
+      baseline: 16, // Add baseline for text positioning
+      containerId: null, // Standalone text element
+      originalText: processedArgs.tableName, // Add original text property
+      groupIds: [tableGroupId], // Group with other table elements
     });
 
     // 4. Field separators and text
@@ -371,6 +383,7 @@ export const CreateDatabaseTableSchema = z
           roughness: 0,
           opacity: 1,
           points: [[0, 0], [processedArgs.tableWidth, 0]],
+          groupIds: [tableGroupId], // Group with other table elements
         });
       }
 
@@ -378,10 +391,10 @@ export const CreateDatabaseTableSchema = z
       elements.push({
         id: `${processedArgs.tableId}_field_${index}`,
         type: 'text',
-        x: processedArgs.x + 10,
-        y: fieldY + 5,
-        width: processedArgs.tableWidth - 20,
-        height: processedArgs.fieldHeight - 10,
+        x: processedArgs.x + 10, // Left-aligned with padding
+        y: fieldY + 5, // Top-aligned within field with small padding
+        width: processedArgs.tableWidth - 20, // Set explicit width
+        height: processedArgs.fieldHeight - 10, // Set explicit height
         angle: 0,
         strokeColor: processedArgs.textColor,
         backgroundColor: 'transparent',
@@ -393,7 +406,11 @@ export const CreateDatabaseTableSchema = z
         fontSize: 14,
         fontFamily: 1,
         textAlign: 'left',
-        verticalAlign: 'middle',
+        verticalAlign: 'top',
+        baseline: 14, // Add baseline for text positioning
+        containerId: null, // Standalone text element
+        originalText: field, // Add original text property
+        groupIds: [tableGroupId], // Group with other table elements
       });
     });
 

@@ -149,34 +149,35 @@ export default function HomePage() {
           }
 
           // Create proper Excalidraw element with backend parameters
+          const timestamp = Date.now();
+          const uniqueIndex = Math.floor(Math.random() * 1000000);
+
           const newElement = {
+            id: elementData.id || `rect_${timestamp}_${uniqueIndex}`,
             type: 'rectangle',
-            version: 1,
-            versionNonce: Math.floor(Math.random() * 1000000),
+            version: elementData.version || 1,
+            versionNonce: elementData.versionNonce || Math.floor(Math.random() * 2147483647),
             isDeleted: false,
-            id: elementData.id || `rect_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`,
-            fillStyle: elementData.fillStyle || 'solid',
-            strokeWidth: elementData.strokeWidth || 2,
-            strokeStyle: 'solid',
-            roughness: elementData.roughness || 1,
-            opacity: elementData.opacity ? Math.round(elementData.opacity * 100) : 100,
-            angle: elementData.angle || 0,
             x: targetX,
             y: targetY,
-            strokeColor: elementData.strokeColor || '#000000',
-            backgroundColor: elementData.backgroundColor || '#ffffff',
             width: targetWidth,
             height: targetHeight,
-            seed: Math.floor(Math.random() * 1000000),
-            groupIds: [],
-            frameId: null,
-            roundness: {
-              type: 3
-            },
-            boundElements: null,
-            updated: 1,
-            link: null,
-            locked: false
+            angle: elementData.angle || 0,
+            strokeColor: elementData.strokeColor || '#000000',
+            backgroundColor: elementData.backgroundColor || '#ffffff',
+            fillStyle: elementData.fillStyle || 'solid',
+            strokeWidth: elementData.strokeWidth || 2,
+            strokeStyle: elementData.strokeStyle || 'solid',
+            roughness: elementData.roughness !== undefined ? elementData.roughness : 1,
+            opacity: elementData.opacity !== undefined ? Math.round(elementData.opacity * 100) : 100,
+            seed: elementData.seed || Math.floor(Math.random() * 2147483647),
+            groupIds: elementData.groupIds || [],
+            frameId: elementData.frameId || null,
+            roundness: elementData.roundness || { type: 3 },
+            boundElements: elementData.boundElements || null,
+            updated: elementData.updated || 1,
+            link: elementData.link || null,
+            locked: elementData.locked || false
           };
 
           const newElements = [...current, newElement];
@@ -212,67 +213,96 @@ export default function HomePage() {
           }
 
           // Process each element to ensure proper Excalidraw format
-          const processedElements = elementsToAdd.map((elementData: any) => {
-            // Common element properties
+          const processedElements = elementsToAdd.map((elementData: any, index: number) => {
+            // Generate stable, unique IDs with better entropy
+            const timestamp = Date.now();
+            const uniqueIndex = Math.floor(Math.random() * 1000000);
+
+            // Common element properties required by Excalidraw
             const baseElement = {
-              version: 1,
-              versionNonce: Math.floor(Math.random() * 1000000),
+              version: elementData.version || 1,
+              versionNonce: elementData.versionNonce || Math.floor(Math.random() * 2147483647),
               isDeleted: false,
-              id: elementData.id || `elem_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`,
               fillStyle: elementData.fillStyle || 'solid',
               strokeWidth: elementData.strokeWidth || 2,
-              strokeStyle: 'solid',
-              roughness: elementData.roughness || 0,
-              opacity: elementData.opacity ? Math.round(elementData.opacity * 100) : 100,
+              strokeStyle: elementData.strokeStyle || 'solid',
+              roughness: elementData.roughness !== undefined ? elementData.roughness : 1,
+              opacity: elementData.opacity !== undefined ? Math.round(elementData.opacity * 100) : 100,
               angle: elementData.angle || 0,
-              x: elementData.x || 100,
-              y: elementData.y || 100,
               strokeColor: elementData.strokeColor || '#000000',
               backgroundColor: elementData.backgroundColor || 'transparent',
-              seed: Math.floor(Math.random() * 1000000),
-              groupIds: [],
-              frameId: null,
-              updated: 1,
-              link: null,
-              locked: false,
+              seed: elementData.seed || Math.floor(Math.random() * 2147483647),
+              groupIds: elementData.groupIds || [],
+              frameId: elementData.frameId || null,
+              roundness: elementData.roundness || null,
+              boundElements: elementData.boundElements || null,
+              updated: elementData.updated || 1,
+              link: elementData.link || null,
+              locked: elementData.locked || false,
             };
 
-            // Type-specific properties
+            // Type-specific properties with all required Excalidraw fields
             if (elementData.type === 'rectangle') {
               return {
                 ...baseElement,
+                id: elementData.id || `rect_${timestamp}_${uniqueIndex}_${index}`,
                 type: 'rectangle',
+                x: elementData.x !== undefined ? elementData.x : 100,
+                y: elementData.y !== undefined ? elementData.y : 100,
                 width: elementData.width || 200,
                 height: elementData.height || 150,
-                roundness: { type: 3 },
-                boundElements: null,
+                roundness: elementData.roundness || { type: 3 }, // Proper roundness for rectangles
               };
             } else if (elementData.type === 'text') {
               return {
                 ...baseElement,
+                id: elementData.id || `text_${timestamp}_${uniqueIndex}_${index}`,
                 type: 'text',
-                width: elementData.width || 100,
-                height: elementData.height || 20,
+                x: elementData.x !== undefined ? elementData.x : 100,
+                y: elementData.y !== undefined ? elementData.y : 100,
+                width: elementData.width || 0, // Let Excalidraw measure
+                height: elementData.height || 0, // Let Excalidraw measure
                 text: elementData.text || '',
                 fontSize: elementData.fontSize || 20,
-                fontFamily: elementData.fontFamily || 1,
+                fontFamily: elementData.fontFamily || 1, // Excalidraw default font
                 textAlign: elementData.textAlign || 'left',
                 verticalAlign: elementData.verticalAlign || 'top',
-                containerId: null,
-                originalText: elementData.text || '',
+                baseline: elementData.baseline || elementData.fontSize || 20, // Use baseline from backend or default
+                containerId: elementData.containerId || null,
+                originalText: elementData.originalText || elementData.text || '',
+                lineHeight: elementData.lineHeight || 1.25,
               };
             } else if (elementData.type === 'line') {
               return {
                 ...baseElement,
+                id: elementData.id || `line_${timestamp}_${uniqueIndex}_${index}`,
                 type: 'line',
+                x: elementData.x !== undefined ? elementData.x : 0,
+                y: elementData.y !== undefined ? elementData.y : 0,
                 width: elementData.width || 100,
                 height: elementData.height || 0,
                 points: elementData.points || [[0, 0], [100, 0]],
-                lastCommittedPoint: null,
-                startBinding: null,
-                endBinding: null,
-                startArrowhead: null,
-                endArrowhead: null,
+                lastCommittedPoint: elementData.lastCommittedPoint || null,
+                startBinding: elementData.startBinding || null,
+                endBinding: elementData.endBinding || null,
+                startArrowhead: elementData.startArrowhead || null,
+                endArrowhead: elementData.endArrowhead || null,
+              };
+            } else if (elementData.type === 'arrow') {
+              return {
+                ...baseElement,
+                id: elementData.id || `arrow_${timestamp}_${uniqueIndex}_${index}`,
+                type: 'arrow',
+                x: elementData.x !== undefined ? elementData.x : 0,
+                y: elementData.y !== undefined ? elementData.y : 0,
+                width: elementData.width || 100,
+                height: elementData.height || 0,
+                points: elementData.points || [[0, 0], [100, 0]],
+                lastCommittedPoint: elementData.lastCommittedPoint || null,
+                startBinding: elementData.startBinding || null,
+                endBinding: elementData.endBinding || null,
+                startArrowhead: elementData.startArrowhead || null,
+                endArrowhead: elementData.endArrowhead || 'arrow',
               };
             }
 
