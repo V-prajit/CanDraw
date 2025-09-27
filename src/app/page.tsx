@@ -4,7 +4,7 @@ import React from 'react';
 import dynamic from 'next/dynamic';
 import { z } from 'zod';
 import {
-  useCedarState,
+  useRegisterState,
   useRegisterFrontendTool,
   useSubscribeStateToAgentContext,
 } from 'cedar-os';
@@ -21,58 +21,33 @@ const ExcalidrawCanvas = dynamic(() => import('@/components/ExcalidrawCanvas'), 
 export default function HomePage() {
   const [chatMode, setChatMode] = React.useState<ChatMode>('sidepanel');
 
-  // ✅ Register canvas state directly in Cedar (no race with subscriptions)
-  const [excalidrawElements, setExcalidrawElements] = useCedarState(
-    'excalidrawElements',
-    [] as any[],
-    'The elements on the Excalidraw canvas',
-    {
-      // IMPORTANT: current API is (currentState, args) — no setValue param
+  // ✅ Manage state locally with React
+  const [excalidrawElements, setExcalidrawElements] = React.useState<any[]>([]);
+
+  // ✅ Register canvas state using legacy API for 0.0.12 backend compatibility
+  useRegisterState({
+    key: 'excalidrawElements',
+    value: excalidrawElements,
+    setValue: setExcalidrawElements,
+    description: 'The elements on the Excalidraw canvas',
+    stateSetters: {
       addElement: {
         name: 'addElement',
         description: 'Add an Excalidraw element to the canvas',
-        argsSchema: z.object({
-          newElement: z
-            .object({
-              id: z.string().optional(),
-              type: z.enum(['rectangle', 'ellipse', 'diamond', 'text', 'arrow', 'line']),
-              x: z.number(),
-              y: z.number(),
-              width: z.number().optional(),
-              height: z.number().optional(),
-              angle: z.number().optional(),
-              strokeColor: z.string().optional(),
-              backgroundColor: z.string().optional(),
-              fillStyle: z.enum(['solid', 'hachure', 'cross-hatch']).optional(),
-              strokeWidth: z.number().optional(),
-              roughness: z.number().min(0).max(2).optional(),
-              opacity: z.number().min(0).max(1).optional(),
-              text: z.string().optional(), // for text elements
-            })
-            .describe('A valid Excalidraw element'),
-        }),
-        execute: (current, args) => {
-          setExcalidrawElements([...current, args.newElement]);
+        execute: (current: any[], args: any) => {
+          // Create the element from the direct args sent by backend
+          const newElement = {
+            id: `rect_${Date.now()}`,
+            type: 'rectangle',
+            ...args
+          };
+          setExcalidrawElements([...current, newElement]);
         },
       },
     }
-  );
+  });
 
-  // ✅ Make this state visible to the agent's input context
-  useSubscribeStateToAgentContext(
-    'excalidrawElements',
-    (elements: any[]) => ({
-      'excalidraw-elements': elements.map((e) => ({
-        id: e.id,
-        type: e.type,
-        x: e.x,
-        y: e.y,
-        w: e.width ?? 0,
-        h: e.height ?? 0,
-      })),
-    }),
-    { color: '#4F46E5' }
-  );
+  // ✅ Context subscription handled by legacy registration - backend already receives state
 
   // ✅ Register the missing FRONTEND tool so "Tool addNewTextLine not found" goes away
   useRegisterFrontendTool({
