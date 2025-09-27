@@ -47,16 +47,14 @@ const callAgent = createStep({
       threadId,
     } = inputData;
 
-    if (!streamController) {
-      throw new Error('Stream controller is required');
-    }
-
     console.log('Chat workflow received input data', inputData);
 
     // Create runtime context with additionalContext and streamController
     const runtimeContext = new RuntimeContext();
     runtimeContext.set('additionalContext', additionalContext);
-    runtimeContext.set('streamController', streamController);
+    if (streamController) {
+      runtimeContext.set('streamController', streamController);
+    }
 
     const messages = [
       'User message: ' + prompt,
@@ -89,10 +87,14 @@ const callAgent = createStep({
 
     for await (const chunk of streamResult.fullStream) {
       if (chunk.type === 'text-delta') {
-        await handleTextStream(chunk.payload.text, streamController);
+        if (streamController) {
+          await handleTextStream(chunk.payload.text, streamController);
+        }
         responseText += chunk.payload.text;
       } else if (chunk.type === 'tool-result' || chunk.type === 'tool-call') {
-        streamJSONEvent(streamController, chunk.type, chunk);
+        if (streamController) {
+          streamJSONEvent(streamController, chunk.type, chunk);
+        }
       }
     }
 

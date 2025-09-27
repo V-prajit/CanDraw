@@ -12,13 +12,14 @@
     "pretty": "npx prettier --write ."
   },
   "dependencies": {
+    "@excalidraw/excalidraw": "^0.18.0",
     "@radix-ui/react-dialog": "^1.1.15",
     "@radix-ui/react-dropdown-menu": "^2.1.15",
     "@radix-ui/react-slot": "^1.2.3",
     "@radix-ui/react-tabs": "^1.1.13",
     "@tiptap/react": "^3.4.2",
     "ai": "^5.0.44",
-    "cedar-os": "^0.1.18",
+    "cedar-os": "^0.1.21",
     "class-variance-authority": "^0.7.1",
     "clsx": "^2.1.1",
     "cmdk": "^1.1.1",
@@ -35,6 +36,9 @@
     "tailwind-merge": "^3.3.1",
     "uuid": "^11.1.0",
     "zod": "^3.25.76"
+  },
+  "overrides": {
+    "prosemirror-model": "1.25.3"
   },
   "devDependencies": {
     "@eslint/eslintrc": "^3",

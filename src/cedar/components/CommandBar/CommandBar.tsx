@@ -604,7 +604,7 @@ export const CommandBar: React.FC<CommandBarProps> = ({
 								className='flex-1 justify-center'
 								aria-label='Message input'>
 								<EditorContent
-									editor={editor}
+									editor={editor as any}
 									className='prose prose-sm max-w-none focus:outline-none outline-none focus:ring-0 ring-0 [&_*]:focus:outline-none [&_*]:outline-none [&_*]:focus:ring-0 [&_*]:ring-0 placeholder-gray-500 dark:placeholder-gray-400 [&_.ProseMirror]:p-0 [&_.ProseMirror]:outline-none'
 								/>
 							</motion.div>

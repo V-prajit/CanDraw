@@ -1,5 +1,7 @@
 import { registerApiRoute } from '@mastra/core/server';
-import { ChatInputSchema, ChatOutput, chatWorkflow } from './workflows/chatWorkflow';
+import { ChatInputSchema, chatWorkflow } from './workflows/chatWorkflow';
+import { voiceWorkflow } from './workflows/voiceWorkflow';
+import { VoiceInputSchema } from './workflows/voiceWorkflowTypes';
 import { zodToJsonSchema } from 'zod-to-json-schema';
 import { createSSEStream } from '../utils/streamUtils';
 
@@ -18,6 +20,48 @@ function toOpenApiSchema(schema: Parameters<typeof zodToJsonSchema>[0]) {
  * - /chat/stream: Server-sent events (SSE) endpoint for streaming responses
  */
 export const apiRoutes = [
+  registerApiRoute('/voice', {
+    method: 'POST',
+    handler: async (c) => {
+      const formData = await c.req.formData();
+      const { threadId, resourceId } = VoiceInputSchema.parse(Object.fromEntries(formData));
+      const audio = formData.get('audio');
+
+      const run = await voiceWorkflow.createRunAsync();
+      const result = await run.start({
+        inputData: {
+          audio,
+          threadId,
+          resourceId,
+        },
+      });
+
+      if (result.status !== 'success') {
+        return c.json({ error: 'Workflow failed' }, 500);
+      }
+
+      const audioStream = result.result.audio;
+      const reader = audioStream.getReader();
+      const chunks = [];
+      while (true) {
+        const { done, value } = await reader.read();
+        if (done) break;
+        chunks.push(value);
+      }
+      const audioBuffer = Buffer.concat(chunks);
+      const audioBase64 = audioBuffer.toString('base64');
+      const audioDataUri = `data:audio/mpeg;base64,${audioBase64}`;
+
+      return c.json({
+        type: 'voice-response',
+        content: result.result.responseText,
+        payload: {
+          audio: audioDataUri,
+        },
+        transcription: result.result.transcription,
+      });
+    },
+  }),
   registerApiRoute('/chat/stream', {
     method: 'POST',
     openapi: {
