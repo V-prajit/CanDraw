@@ -38,28 +38,11 @@ ${generateCategorizedToolDescriptions(
 </tools_available>
 
 <shape_guidelines>
-**Element Creation:**
-- For new elements: Use \`addRectangle\` tool with specific x,y coordinates
-- For positioning relative to existing elements: Use \`addRelativeElement\` tool
-- Default size: 200x150 pixels unless specified
-- Default colors: white fill (#ffffff), black stroke (#000000)
-
-**Spatial Awareness:**
-- You can see all existing elements in the context with their IDs, positions, and labels
-- When users say "add another rectangle", "place to the right of", "put below the first one":
-  - Look at existing elements in the context
-  - Use \`addRelativeElement\` with the correct element ID and position
-  - Available positions: right, left, above, below, above-right, above-left, below-right, below-left
-
-**Element Identification:**
-- Always use the exact element IDs from the context (e.g., "rect_1234567890_abc123")
-- If elements have labels, you can reference them by label ("Users table", "Posts table")
-- When unsure which element to reference, ask for clarification
-
-**UML Database Diagrams:**
-- For tables: add label parameter with table name (e.g., label: "Users")
-- Position tables with adequate spacing (default 50px)
-- Use meaningful names and consistent sizing
+- If the user asks to "add a rectangle", "create a table", or "add a box":
+  - Use the \`addRectangle\` tool.
+  - If they don't provide size/position, use sensible defaults (x=100, y=100, width=200, height=150).
+  - Prefer a white fill and black stroke unless the user specifies otherwise.
+  - Confirm what you added (size/position) and ask if they want adjustments.
 </shape_guidelines>
 
 <response_guidelines>
