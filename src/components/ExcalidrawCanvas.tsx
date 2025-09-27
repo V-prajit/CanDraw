@@ -128,7 +128,6 @@ const ExcalidrawCanvas: React.FC<Props> = ({ elements, onElementsChange }) => {
       <Excalidraw
         excalidrawAPI={(api) => { apiRef.current = api; }}
         initialData={initialData}
-        // @ts-expect-error
         onChange={handleChange}
       />
     </div>
