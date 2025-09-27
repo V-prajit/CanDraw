@@ -45,6 +45,7 @@ const processVoice = createStep({
       model: 'tts-1',
       voice: 'alloy',
       input: responseText,
+      speed: 1.15,
     });
 
     return {
