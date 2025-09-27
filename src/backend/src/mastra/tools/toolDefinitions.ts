@@ -93,23 +93,51 @@ export const AddRectangleSchema = z
   })
   .transform((args) => {
     const now = Date.now();
-    return {
+
+    // DEBUGGING: Log input args and transformation process
+    console.log('🔧 AddRectangleSchema.transform() called with args:', args);
+    console.log('🔧 Args type:', typeof args, 'Is object:', typeof args === 'object');
+    console.log('🔧 Args keys:', args ? Object.keys(args) : 'no keys');
+
+    // Ensure defaults are applied even if args is empty/undefined
+    const safeArgs = args || {};
+    const processedArgs = {
+      id: safeArgs.id ?? `rect_${now}_${Math.random().toString(36).substr(2, 9)}`,
+      x: safeArgs.x ?? 100,
+      y: safeArgs.y ?? 100,
+      width: safeArgs.width ?? 200,
+      height: safeArgs.height ?? 150,
+      angle: safeArgs.angle ?? 0,
+      strokeColor: safeArgs.strokeColor ?? '#000000',
+      backgroundColor: safeArgs.backgroundColor ?? '#ffffff',
+      fillStyle: safeArgs.fillStyle ?? 'solid',
+      strokeWidth: safeArgs.strokeWidth ?? 2,
+      roughness: safeArgs.roughness ?? 1,
+      opacity: safeArgs.opacity ?? 1,
+    };
+
+    const result = {
       newElement: {
-        id: args.id ?? `rect_${now}`,
+        id: processedArgs.id,
         type: 'rectangle',
-        x: args.x,
-        y: args.y,
-        width: args.width,
-        height: args.height,
-        angle: args.angle ?? 0,
-        strokeColor: args.strokeColor ?? '#000000',
-        backgroundColor: args.backgroundColor ?? '#ffffff',
-        fillStyle: args.fillStyle ?? 'solid',
-        strokeWidth: args.strokeWidth ?? 2,
-        roughness: args.roughness ?? 1,
-        opacity: args.opacity ?? 1,
+        x: processedArgs.x,
+        y: processedArgs.y,
+        width: processedArgs.width,
+        height: processedArgs.height,
+        angle: processedArgs.angle,
+        strokeColor: processedArgs.strokeColor,
+        backgroundColor: processedArgs.backgroundColor,
+        fillStyle: processedArgs.fillStyle,
+        strokeWidth: processedArgs.strokeWidth,
+        roughness: processedArgs.roughness,
+        opacity: processedArgs.opacity,
       },
     };
+
+    console.log('🚀 AddRectangleSchema.transform() returning:', result);
+    console.log('🚀 newElement structure:', result.newElement);
+
+    return result;
   });
 
 export const addRectangleTool = createMastraToolForStateSetter(
