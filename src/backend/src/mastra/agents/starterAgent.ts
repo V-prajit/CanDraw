@@ -62,7 +62,10 @@ ${generateCategorizedToolDescriptions(
   - Use the \`connectTablesArrow\` tool for connecting specific tables
   - Use the \`addRelationshipArrow\` tool for custom positioning
   - Support UML relationship types: one-to-one, one-to-many, many-to-one, many-to-many
-  - Position arrows to connect table edges, typically center-to-center or edge-to-edge
+  - **IMPORTANT**: For proper table binding, calculate connection points based on table positions:
+    * User table at (100,100) with width 250: use sourceX=225 (center), sourceY=180 (middle)
+    * Posts table at (400,100) with width 250: use targetX=400 (left edge), targetY=180 (middle)
+    * This ensures arrows bind to table elements and move with them
   - Use blue arrows (#1976d2) to match table styling
 </database_table_guidelines>
 

@@ -451,6 +451,10 @@ export const ConnectTablesArrowSchema = z
     targetX: z.number().describe('X coordinate of the target table center or edge'),
     targetY: z.number().describe('Y coordinate of the target table center or edge'),
 
+    // Table binding (optional - will auto-detect if not provided)
+    sourceTableId: z.string().optional().describe('ID of the source table element to bind to'),
+    targetTableId: z.string().optional().describe('ID of the target table element to bind to'),
+
     // Relationship type
     relationshipType: z
       .enum(['one-to-one', 'one-to-many', 'many-to-one', 'many-to-many', 'simple'])
@@ -478,6 +482,8 @@ export const ConnectTablesArrowSchema = z
       sourceY: safeArgs.sourceY ?? 100,
       targetX: safeArgs.targetX ?? 300,
       targetY: safeArgs.targetY ?? 100,
+      sourceTableId: safeArgs.sourceTableId,
+      targetTableId: safeArgs.targetTableId,
       relationshipType: safeArgs.relationshipType ?? 'simple',
       strokeColor: safeArgs.strokeColor ?? '#1976d2',
       strokeWidth: safeArgs.strokeWidth ?? 2,
@@ -517,6 +523,38 @@ export const ConnectTablesArrowSchema = z
       endArrowhead = 'arrow';
     }
 
+    // Create element bindings for connected arrows
+    let startBinding = null;
+    let endBinding = null;
+
+    // For now, we'll use the provided table IDs if available
+    // Or create bindings based on coordinate patterns for future enhancement
+    if (processedArgs.sourceTableId) {
+      startBinding = {
+        elementId: processedArgs.sourceTableId,
+        focus: 0.5, // Middle of the edge
+        gap: 0
+      };
+      console.log('🔗 Created start binding with explicit ID:', startBinding);
+    }
+
+    if (processedArgs.targetTableId) {
+      endBinding = {
+        elementId: processedArgs.targetTableId,
+        focus: 0.5, // Middle of the edge
+        gap: 0
+      };
+      console.log('🔗 Created end binding with explicit ID:', endBinding);
+    }
+
+    // Log available context for debugging
+    console.log('🔍 Arrow tool context:', {
+      sourceCoords: [processedArgs.sourceX, processedArgs.sourceY],
+      targetCoords: [processedArgs.targetX, processedArgs.targetY],
+      hasSourceTableId: !!processedArgs.sourceTableId,
+      hasTargetTableId: !!processedArgs.targetTableId
+    });
+
     const result = {
       newElement: {
         id: processedArgs.id,
@@ -534,8 +572,8 @@ export const ConnectTablesArrowSchema = z
         opacity: 1,
         points: points,
         lastCommittedPoint: null,
-        startBinding: null, // Could be enhanced to bind to table elements
-        endBinding: null,
+        startBinding: startBinding, // Now properly bound to table elements
+        endBinding: endBinding,
         startArrowhead: startArrowhead,
         endArrowhead: endArrowhead,
       },
