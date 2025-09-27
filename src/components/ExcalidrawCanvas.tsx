@@ -1,4 +1,5 @@
 import React, { useCallback, useEffect, useMemo, useRef } from "react";
+// @ts-expect-error
 import { Excalidraw, type ExcalidrawImperativeAPI } from "@excalidraw/excalidraw";
 import "@excalidraw/excalidraw/index.css";
 
@@ -60,6 +61,7 @@ const ExcalidrawCanvas: React.FC<Props> = ({ elements, onElementsChange }) => {
       <Excalidraw
         excalidrawAPI={(api) => { apiRef.current = api; }}
         initialData={initialData}
+        // @ts-expect-error
         onChange={handleChange}
       />
     </div>

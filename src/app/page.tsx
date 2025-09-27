@@ -7,6 +7,7 @@ import {
   useRegisterState,
   useRegisterFrontendTool,
   useSubscribeStateToAgentContext,
+  useCedarStore
 } from 'cedar-os';
 
 import { ChatModeSelector } from '@/components/ChatModeSelector';
@@ -19,7 +20,7 @@ type ChatMode = 'floating' | 'sidepanel' | 'caption';
 const ExcalidrawCanvas = dynamic(() => import('@/components/ExcalidrawCanvas'), { ssr: false });
 
 export default function HomePage() {
-  const [chatMode, setChatMode] = React.useState<ChatMode>('sidepanel');
+  const [chatMode, setChatMode] = React.useState<ChatMode>('floating');
 
   // ✅ Manage state locally with React
   const [excalidrawElements, setExcalidrawElements] = React.useState<any[]>([]);
@@ -28,6 +29,13 @@ export default function HomePage() {
   React.useEffect(() => {
     console.log('🔄 React state updated:', excalidrawElements.length, 'elements:', excalidrawElements);
   }, [excalidrawElements]);
+
+  React.useEffect(() => {
+    const setShowChat = useCedarStore.getState().setShowChat;
+    if (setShowChat) {
+      setShowChat(true);
+    }
+  }, []);
 
   // ✅ Register canvas state using legacy API for 0.0.12 backend compatibility
   useRegisterState({
@@ -107,7 +115,7 @@ export default function HomePage() {
         // you can add font props in your ExcalidrawCanvas if you handle them
       };
       setExcalidrawElements((prev) => [...prev, textEl]);
-      return { ok: true };
+      // return { ok: true };
     },
   });
 
@@ -120,27 +128,9 @@ export default function HomePage() {
           onElementsChange={setExcalidrawElements}
         />
       </div>
-
-      {/* 2) Chat UI overlays; collapsing it must not unmount the canvas */}
-      {chatMode === 'sidepanel' ? (
-        <SidePanelCedarChat
-          side="right"
-          title="Cedarling Chat"
-          collapsedLabel="Chat with Cedar"
-          showCollapsedButton={true}
-        >
-          <DebuggerPanel />
-          <ChatModeSelector currentMode={chatMode} onModeChange={setChatMode} />
-        </SidePanelCedarChat>
-      ) : (
-        <>
-          <ChatModeSelector currentMode={chatMode} onModeChange={setChatMode} />
-          {chatMode === 'caption' && <CedarCaptionChat />}
-          {chatMode === 'floating' && (
-            <FloatingCedarChat side="right" title="Cedarling Chat" collapsedLabel="Chat with Cedar" />
-          )}
-        </>
-      )}
+  
+      {/* 2) Floating chat only */}
+      <FloatingCedarChat side="right" title="Excalidraw Copilot" collapsedLabel="Chat with Cedar" />
     </div>
   );
 }
