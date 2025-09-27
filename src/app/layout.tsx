@@ -3,6 +3,7 @@ import { Geist, Geist_Mono } from 'next/font/google';
 import './globals.css';
 import { CedarCopilot, ProviderConfig } from 'cedar-os';
 import { messageRenderers } from '@/cedar/messageRenderers';
+import '@/lib/audioInterceptor'; // Import the audio interceptor
 
 const geistSans = Geist({
   variable: '--font-geist-sans',

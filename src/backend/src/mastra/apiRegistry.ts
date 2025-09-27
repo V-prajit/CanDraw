@@ -53,9 +53,12 @@ export const apiRoutes = [
       const audioDataUri = `data:audio/mpeg;base64,${audioBase64}`;
 
       return c.json({
-        audio: audioDataUri,
-        transcription: result.result.transcription,
+        type: 'voice-response',
         content: result.result.responseText,
+        payload: {
+          audio: audioDataUri,
+        },
+        transcription: result.result.transcription,
       });
     },
   }),
