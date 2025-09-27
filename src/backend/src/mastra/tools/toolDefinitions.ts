@@ -125,6 +125,34 @@ export const addRectangleTool = createMastraToolForStateSetter(
   },
 );
 
+// Schema for relative positioning tool
+export const AddRelativeElementSchema = z.object({
+  relativeToId: z.string().describe('ID of the existing element to position relative to'),
+  position: z.enum(['right', 'left', 'above', 'below', 'above-right', 'above-left', 'below-right', 'below-left'])
+    .default('right')
+    .describe('Position relative to the reference element'),
+  spacing: z.number().default(50).describe('Spacing between elements in pixels'),
+  width: z.number().default(200).describe('Rectangle width in pixels'),
+  height: z.number().default(150).describe('Rectangle height in pixels'),
+  strokeColor: z.string().optional().default('#000000').describe('Stroke (border) color'),
+  backgroundColor: z.string().optional().default('#ffffff').describe('Fill color'),
+  label: z.string().optional().describe('Optional label for the element'),
+  id: z.string().optional().describe('Optional custom element id'),
+});
+
+export const addRelativeElementTool = createMastraToolForStateSetter(
+  'excalidrawElements',    // state key
+  'addRelativeElement',    // state setter name on the frontend
+  AddRelativeElementSchema,
+  {
+    description:
+      'Add a rectangle positioned relative to an existing element on the canvas. Use this when the user wants to place elements "next to", "below", or "above" existing elements.',
+    toolId: 'addRelativeElement',
+    streamEventFn: streamJSONEvent,
+    errorSchema: ErrorResponseSchema,
+  },
+);
+
 /**
  * Registry of all available tools organized by category
  * This structure makes it easy to see tool organization and generate categorized descriptions
@@ -137,6 +165,7 @@ export const TOOL_REGISTRY = {
   // NEW category for shape tools
   shapeManipulation: {
     addRectangleTool,
+    addRelativeElementTool,
   },
 };
 
@@ -145,4 +174,5 @@ export const ALL_TOOLS = [
   changeTextTool,
   addNewTextLineTool,
   addRectangleTool, // NEW
+  addRelativeElementTool, // NEW
 ];
