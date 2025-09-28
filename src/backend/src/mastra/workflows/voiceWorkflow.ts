@@ -24,6 +24,8 @@ const processVoice = createStep({
       file: audio as any,
     });
 
+    console.log(transcription.text)
+
     // 2. Get a response from the chat agent
     const run = await chatWorkflow.createRunAsync();
     const result = await run.start({

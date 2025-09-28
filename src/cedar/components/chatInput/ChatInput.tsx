@@ -26,6 +26,7 @@ export const ChatInput: React.FC<{
   stream?: boolean; // Whether to use streaming for responses
 }> = ({ handleFocus, handleBlur, isInputFocused, className = '', stream = true }) => {
   const [isFocused, setIsFocused] = React.useState(false);
+  const lastProcessedVoiceMessageId = React.useRef<string | null>(null);
 
   const { editor, isEditorEmpty, handleSubmit } = useCedarEditor({
     onFocus: () => {
@@ -141,17 +142,69 @@ export const ChatInput: React.FC<{
     // Add the event listener
     window.addEventListener('keydown', handleGlobalKeyDown);
 
-    // Clean up
-    return () => {
-      window.removeEventListener('keydown', handleGlobalKeyDown);
-    };
-  }, [handleVoiceToggle]);
+          // Clean up
+          return () => {
+            window.removeEventListener('keydown', handleGlobalKeyDown);
+          };
+        }, [handleVoiceToggle]);
+    
+    const streamLLM = useCedarStore((state) => state.streamLLM);
+  const compileAdditionalContext = useCedarStore(
+    (state) => state.compileAdditionalContext,
+  );
+  const handleLLMResponse = useCedarStore((state) => state.handleLLMResponse);
 
-  return (
+  useEffect(() => {
+    // Find the latest user message from a voice input that we haven't processed yet.
+    const voiceMessage = [...messages]
+      .reverse()
+      .find(
+        (msg) =>
+          msg.role === 'user' &&
+          msg.metadata?.source === 'voice' &&
+          msg.id !== lastProcessedVoiceMessageId.current,
+      );
+
+    if (voiceMessage) {
+      // 1. Remember this message's ID so we don't process it again.
+      lastProcessedVoiceMessageId.current = voiceMessage.id;
+
+      if (voiceMessage.content) {
+        // Directly call the LLM with the transcribed text,
+        // bypassing the editor and handleSubmit to avoid duplicate messages.
+        // The backend will process this and send back Excalidraw commands.
+        const additionalContext = compileAdditionalContext();
+        const contextString = JSON.stringify(additionalContext);
+        const prompt = `User Text: ${voiceMessage.content}\n\nAdditional Context: ${contextString}`;
+        streamLLM(
+          {
+            prompt: prompt,
+            route: '/chat',
+          },
+          async (event) => {
+            switch (event.type) {
+              case 'chunk':
+                await handleLLMResponse([event.content]);
+                break;
+              case 'object':
+                await handleLLMResponse(
+                  Array.isArray(event.object) ? event.object : [event.object],
+                );
+                break;
+              case 'done':
+                break;
+              case 'error':
+                console.error('Stream error:', event.error);
+                break;
+            }
+          },
+        );
+      }
+    }
+  }, [messages, streamLLM, compileAdditionalContext, handleLLMResponse]);  return (
     <div className={cn('bg-gray-800/10 dark:bg-gray-600/80 rounded-lg p-3 text-sm', className)}>
       {/* Input context row showing selected context nodes */}
       <ContextBadgeRow editor={editor} />
-
       {/* Chat editor row */}
       <div className="relative w-full h-fit" id="cedar-chat-input">
         {voice.isListening || voice.isSpeaking ? (
