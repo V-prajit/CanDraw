@@ -1,22 +1,22 @@
-# 🔍 **URGENT: Cedar-OS State Reset Mystery - Needs Deep Research**
+# **URGENT: Cedar-OS State Reset Mystery - Needs Deep Research**
 
 ## **Quick Context:**
 You're continuing a Cedar-OS + Mastra + Excalidraw integration where we've solved 90% of the issues but hit a **critical final blocker**: React state updates work but get **immediately reset back to empty**.
 
 ## **Read This First:**
-📁 **Complete debugging info**: `/Users/prajit/test/templateforHackGT/CEDAR_DEBUG_CHECKPOINT.md`
+**Complete debugging info**: `/Users/prajit/test/templateforHackGT/CEDAR_DEBUG_CHECKPOINT.md`
 
 ## **Current Status:**
-✅ **Backend**: 100% working - setState events sent successfully
-✅ **Frontend Execute**: Cedar calls our function correctly
-✅ **React Updates**: setExcalidrawElements runs successfully
-❌ **ISSUE**: State gets immediately reset to empty after updates
+**Backend**: 100% working - setState events sent successfully
+**Frontend Execute**: Cedar calls our function correctly
+**React Updates**: setExcalidrawElements runs successfully
+**ISSUE**: State gets immediately reset to empty after updates
 
 ## **The Reset Pattern:**
 ```
-🎯 EXECUTE CALLED → 🚀 setState called → 🎨 Canvas receives element → 🔄 React confirms update
+EXECUTE CALLED → setState called → Canvas receives element → React confirms update
 ↓ THEN IMMEDIATELY:
-❌ Canvas receives empty → ❌ React state reset to []
+Canvas receives empty → React state reset to []
 ```
 
 ## **Key Evidence:**
@@ -48,4 +48,4 @@ You're continuing a Cedar-OS + Mastra + Excalidraw integration where we've solve
 ## **Success Criteria:**
 Rectangle appears on Excalidraw canvas when user types "add a rectangle" in chat.
 
-**This is 95% solved - just need to identify the reset mechanism!** 🎯
+**This is 95% solved - just need to identify the reset mechanism!**

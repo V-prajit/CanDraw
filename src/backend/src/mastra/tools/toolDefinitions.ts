@@ -6,7 +6,7 @@ import {
 import { streamJSONEvent } from '../../utils/streamUtils';
 import { z } from 'zod';
 
-// Import LLM-powered tools (for demo generation only)
+// Import advanced tools (for demo generation only)
 import { llmDemoGenerationTool } from './llmDemoTool';
 
 // Define the schemas for our tools based on what we registered in page.tsx
@@ -98,9 +98,9 @@ export const AddRectangleSchema = z
     const now = Date.now();
 
     // DEBUGGING: Log input args and transformation process
-    console.log('🔧 AddRectangleSchema.transform() called with args:', args);
-    console.log('🔧 Args type:', typeof args, 'Is object:', typeof args === 'object');
-    console.log('🔧 Args keys:', args ? Object.keys(args) : 'no keys');
+    console.log('AddRectangleSchema.transform() called with args:', args);
+    console.log('Args type:', typeof args, 'Is object:', typeof args === 'object');
+    console.log('Args keys:', args ? Object.keys(args) : 'no keys');
 
     // Ensure defaults are applied even if args is empty/undefined
     const safeArgs = args || {};
@@ -137,8 +137,8 @@ export const AddRectangleSchema = z
       },
     };
 
-    console.log('🚀 AddRectangleSchema.transform() returning:', result);
-    console.log('🚀 newElement structure:', result.newElement);
+    console.log('AddRectangleSchema.transform() returning:', result);
+    console.log('newElement structure:', result.newElement);
 
     return result;
   });
@@ -183,7 +183,7 @@ export const AddTextSchema = z
   .transform((args) => {
     const now = Date.now();
 
-    console.log('🔧 AddTextSchema.transform() called with args:', args);
+    console.log('AddTextSchema.transform() called with args:', args);
 
     // Ensure defaults are applied
     const safeArgs = args || {};
@@ -224,7 +224,7 @@ export const AddTextSchema = z
       },
     };
 
-    console.log('🚀 AddTextSchema.transform() returning:', result);
+    console.log('AddTextSchema.transform() returning:', result);
     return result;
   });
 
@@ -276,7 +276,7 @@ export const CreateDatabaseTableSchema = z
     const now = Date.now();
     const random = Math.random().toString(36).substr(2, 9);
 
-    console.log('🔧 CreateDatabaseTableSchema.transform() called with args:', args);
+    console.log('CreateDatabaseTableSchema.transform() called with args:', args);
 
     const typeMapping: { [key: string]: string } = {
       string: 'varchar',
@@ -463,8 +463,8 @@ export const CreateDatabaseTableSchema = z
       elements: elements, // Return multiple elements
     };
 
-    console.log('🚀 CreateDatabaseTableSchema.transform() returning:', result);
-    console.log('🚀 Created', elements.length, 'elements for table:', processedArgs.tableName);
+    console.log('CreateDatabaseTableSchema.transform() returning:', result);
+    console.log('Created', elements.length, 'elements for table:', processedArgs.tableName);
 
     return result;
   });
@@ -521,7 +521,7 @@ export const ConnectTablesArrowSchema = z
     const now = Date.now();
     const random = Math.random().toString(36).substr(2, 9);
 
-    console.log('🔧 ConnectTablesArrowSchema.transform() called with args:', args);
+    console.log('ConnectTablesArrowSchema.transform() called with args:', args);
 
     // Ensure defaults are applied
     const safeArgs = args || {};
@@ -575,7 +575,7 @@ export const ConnectTablesArrowSchema = z
         }
       }
 
-      console.log('❌ No table found at the given coordinates');
+      console.log('No table found at the given coordinates');
       return null;
     }
 
@@ -691,8 +691,8 @@ export const ConnectTablesArrowSchema = z
       },
     };
 
-    console.log('🚀 ConnectTablesArrowSchema.transform() returning:', result);
-    console.log('🚀 Arrow type:', processedArgs.relationshipType, 'Start:', startArrowhead, 'End:', endArrowhead);
+    console.log('ConnectTablesArrowSchema.transform() returning:', result);
+    console.log('Arrow type:', processedArgs.relationshipType, 'Start:', startArrowhead, 'End:', endArrowhead);
     console.log('🔗 Final binding:', {
       sourceTableId: processedArgs.sourceTableId,
       targetTableId: processedArgs.targetTableId,
@@ -756,7 +756,7 @@ export const AddRelationshipArrowSchema = z
     const now = Date.now();
     const random = Math.random().toString(36).substr(2, 9);
 
-    console.log('🔧 AddRelationshipArrowSchema.transform() called with args:', args);
+    console.log('AddRelationshipArrowSchema.transform() called with args:', args);
 
     // Ensure defaults are applied
     const safeArgs = args || {};
@@ -825,8 +825,8 @@ export const AddRelationshipArrowSchema = z
       },
     };
 
-    console.log('🚀 AddRelationshipArrowSchema.transform() returning:', result);
-    console.log('🚀 Arrow from:', `(${processedArgs.startX}, ${processedArgs.startY})`, 'to:', `(${processedArgs.endX}, ${processedArgs.endY})`);
+    console.log('AddRelationshipArrowSchema.transform() returning:', result);
+    console.log('Arrow from:', `(${processedArgs.startX}, ${processedArgs.startY})`, 'to:', `(${processedArgs.endX}, ${processedArgs.endY})`);
 
     return result;
   });
@@ -864,7 +864,7 @@ export const TOOL_REGISTRY = {
     connectTablesArrowTool,
     addRelationshipArrowTool,
   },
-  // LLM-powered tools for demo generation
+  // Advanced tools for demo generation
   llmTools: {
     llmDemoGenerationTool,
   },
@@ -879,5 +879,5 @@ export const ALL_TOOLS = [
   createDatabaseTableTool, // NEW
   connectTablesArrowTool, // NEW
   addRelationshipArrowTool, // NEW
-  llmDemoGenerationTool, // LLM-powered demo generation tool
+  llmDemoGenerationTool, // Advanced demo generation tool
 ];

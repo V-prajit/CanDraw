@@ -84,7 +84,7 @@ IMPORTANT:
 }
 
 async function fallbackExtraction(elements: any[]): Promise<any> {
-  console.log('🔄 Attempting fallback extraction...');
+  console.log('Attempting fallback extraction...');
 
   // Simple fallback that looks for basic patterns
   const rectangles = elements.filter(el => el.type === 'rectangle');
@@ -238,11 +238,11 @@ export const apiRoutes = [
     handler: async (c) => {
       try {
         const body = await c.req.json();
-        console.log('🔧 LLM Export called');
+        console.log('Export called');
 
         // Extract elements
         const elements = body.data?.elements || body.elements || [];
-        console.log('📊 Processing', elements.length, 'elements');
+        console.log('Processing', elements.length, 'elements');
 
         // Simple test response first
         if (elements.length === 0) {
@@ -257,13 +257,13 @@ export const apiRoutes = [
           el && el.type && ['rectangle', 'text', 'arrow', 'line'].includes(el.type)
         );
 
-        console.log('✅ Found', relevantElements.length, 'relevant elements');
+        console.log('Found', relevantElements.length, 'relevant elements');
 
         let result;
 
         try {
           // Use Mastra agent to extract database schema from canvas elements
-          console.log('🤖 Calling Mastra agent for extraction...');
+          console.log('Calling Mastra agent for extraction...');
           const prompt = buildExtractionPrompt(relevantElements);
 
           const response = await starterAgent.generateVNext(prompt, {
@@ -274,7 +274,7 @@ export const apiRoutes = [
             tools: {}, // Disable tools to force direct JSON generation
           });
 
-          console.log('🔍 Full response object:', JSON.stringify(response, null, 2));
+          console.log('Full response object:', JSON.stringify(response, null, 2));
 
           // Handle different response formats for generateVNext
           let responseText = '';
@@ -285,34 +285,34 @@ export const apiRoutes = [
           } else if (typeof response === 'string') {
             responseText = response;
           } else {
-            console.error('❌ Unknown response format:', response);
+            console.error('Unknown response format:', response);
             throw new Error('Unknown response format from generateVNext');
           }
 
-          console.log('📝 Agent Response:', responseText.substring(0, 200) + '...');
+          console.log('Agent Response:', responseText.substring(0, 200) + '...');
 
           // Extract JSON from response (handle markdown code blocks)
           let jsonText = responseText;
           const jsonMatch = responseText.match(/```json\s*([\s\S]*?)\s*```/);
           if (jsonMatch) {
             jsonText = jsonMatch[1];
-            console.log('📄 Extracted JSON from markdown code block');
+            console.log('Extracted JSON from markdown code block');
           }
 
           // Parse the JSON response
           try {
             result = JSON.parse(jsonText);
-            console.log('✅ Successfully parsed agent response');
+            console.log('Successfully parsed agent response');
           } catch (parseError) {
-            console.error('❌ Failed to parse agent response as JSON:', parseError);
-            console.log('🔍 Response text for debugging:', responseText.substring(0, 500));
-            console.log('🔄 Using fallback extraction...');
+            console.error('Failed to parse agent response as JSON:', parseError);
+            console.log('Response text for debugging:', responseText.substring(0, 500));
+            console.log('Using fallback extraction...');
             result = await fallbackExtraction(relevantElements);
           }
 
         } catch (error) {
-          console.error('❌ Agent call failed:', error);
-          console.log('🔄 Using fallback extraction...');
+          console.error('Agent call failed:', error);
+          console.log('Using fallback extraction...');
           result = await fallbackExtraction(relevantElements);
         }
 

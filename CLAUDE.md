@@ -81,7 +81,7 @@ User Chat → Mastra Agent → Shape Tools → Cedar-OS State → Excalidraw Can
 - Chat: "Create a rectangle" - Test basic shape spawning
 
 ## Package Version Warning
-⚠️ **DO NOT modify package.json versions** - Current setup has verified compatibility
+**DO NOT modify package.json versions** - Current setup has verified compatibility
 - Next.js 15.4.4
 - React 19.1.0
 - Excalidraw 0.18.0
@@ -89,11 +89,11 @@ User Chat → Mastra Agent → Shape Tools → Cedar-OS State → Excalidraw Can
 - Mastra 0.13.1
 
 ## Current State
-- ✅ Frontend state management ready
-- ✅ Excalidraw integration working
-- ✅ Cedar-OS agent communication working
-- ❌ Backend shape tools missing (CRITICAL)
-- ❌ Agent instructions limited to text only
+- Frontend state management ready
+- Excalidraw integration working
+- Cedar-OS agent communication working
+- Backend shape tools missing (CRITICAL)
+- Agent instructions limited to text only
 
 ## Success Criteria
 1. User types "Add a rectangle" → Rectangle appears on canvas

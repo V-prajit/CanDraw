@@ -3,13 +3,13 @@ import { createMastraToolForStateSetter } from '@cedar-os/backend';
 import { streamJSONEvent } from '../../utils/streamUtils';
 import { z } from 'zod';
 
-// Schema for the LLM export tool
+// Schema for the export tool
 export const LLMExportSchema = z
   .object({
     elements: z.array(z.record(z.unknown())).describe('Raw Excalidraw elements from the canvas'),
   })
   .transform(async (args) => {
-    console.log('🔧 LLM Export called with:', {
+    console.log('Export called with:', {
       elementCount: args.elements.length
     });
 
@@ -18,15 +18,15 @@ export const LLMExportSchema = z
       el && el.type && ['rectangle', 'text', 'arrow', 'line'].includes(el.type)
     );
 
-    console.log('🔍 Filtered to', relevantElements.length, 'relevant elements for LLM analysis');
+    console.log('Filtered to', relevantElements.length, 'relevant elements for analysis');
 
-    // Build the LLM prompt for schema extraction - always include relationships and sample data
+    // Build the prompt for schema extraction - always include relationships and sample data
     const prompt = buildExtractionPrompt(relevantElements);
 
     try {
-      // Call GPT-4.1 for intelligent parsing
+      // Call language model for intelligent parsing
       const completion = await openai.chat.completions.create({
-        model: 'gpt-4', // Will update to gpt-4.1 when available in SDK
+        model: 'gpt-4', // Language model for parsing
         messages: [
           {
             role: 'system',
@@ -44,7 +44,7 @@ export const LLMExportSchema = z
 
       const result = JSON.parse(completion.choices[0].message.content || '{}');
 
-      console.log('🚀 LLM Export successful:', {
+      console.log('Export successful:', {
         tablesFound: result.tables?.length || 0,
         relationshipsFound: result.relationships?.length || 0,
         hasSQL: !!result.sql,
@@ -60,7 +60,7 @@ export const LLMExportSchema = z
       };
 
     } catch (error) {
-      console.error('❌ LLM Export failed:', error);
+      console.error('LLM Export failed:', error);
 
       // Fallback parsing attempt
       const fallbackResult = await fallbackExtraction(relevantElements);
@@ -144,7 +144,7 @@ IMPORTANT:
 }
 
 async function fallbackExtraction(elements: any[]): Promise<any> {
-  console.log('🔄 Attempting fallback extraction...');
+  console.log('Attempting fallback extraction...');
 
   // Simple fallback that looks for basic patterns
   const rectangles = elements.filter(el => el.type === 'rectangle');

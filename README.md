@@ -4,11 +4,11 @@ A blank starter template combining [Cedar-OS](https://cedar.ai) for the frontend
 
 ## Features
 
-- **🤖 AI Chat Integration**: Built-in chat workflows powered by OpenAI through Mastra agents
-- **⚡ Real-time Streaming**: Server-sent events (SSE) for streaming AI responses
-- **🎨 Beautiful UI**: Cedar-OS components with 3D effects and modern design
-- **🔧 Type-safe Workflows**: Mastra-based backend with full TypeScript support
-- **📡 Dual API Modes**: Both streaming and non-streaming chat endpoints
+- **Chat Integration**: Built-in chat workflows powered by OpenAI through Mastra agents
+- **Real-time Streaming**: Server-sent events (SSE) for streaming responses
+- **Beautiful UI**: Cedar-OS components with 3D effects and modern design
+- **Type-safe Workflows**: Mastra-based backend with full TypeScript support
+- **Dual API Modes**: Both streaming and non-streaming chat endpoints
 
 ## Quick Start
 

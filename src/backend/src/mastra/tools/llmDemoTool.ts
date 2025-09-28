@@ -3,7 +3,7 @@ import { createMastraToolForStateSetter } from '@cedar-os/backend';
 import { streamJSONEvent } from '../../utils/streamUtils';
 import { z } from 'zod';
 
-// Schema for the LLM demo generation tool
+// Schema for the demo generation tool
 export const LLMDemoGenerationSchema = z
   .object({
     schema: z.object({
@@ -30,7 +30,7 @@ export const LLMDemoGenerationSchema = z
     demoType: z.enum(['forms-interface', 'table-viewer', 'dashboard']).default('forms-interface').describe('Type of demo interface to generate')
   })
   .transform(async (args) => {
-    console.log('🚀 LLM Demo Generation called with:', {
+    console.log('Demo Generation called with:', {
       tablesCount: args.schema.tables.length,
       relationshipsCount: args.schema.relationships?.length || 0,
       userPrompt: args.userPrompt || 'none',
@@ -41,11 +41,11 @@ export const LLMDemoGenerationSchema = z
       // Build the generation prompt
       const prompt = buildDemoGenerationPrompt(args.schema, args.userPrompt, args.demoType);
 
-      console.log('🧠 Sending prompt to GPT-4.1 for demo generation...');
+      console.log('Sending prompt for demo generation...');
 
-      // Call GPT-4.1 for complete application generation
+      // Call language model for complete application generation
       const completion = await openai.chat.completions.create({
-        model: 'gpt-4', // Will update to gpt-4.1 when available in SDK
+        model: 'gpt-4', // Language model for generation
         messages: [
           {
             role: 'system',
@@ -63,7 +63,7 @@ export const LLMDemoGenerationSchema = z
 
       const result = JSON.parse(completion.choices[0].message.content || '{}');
 
-      console.log('✅ Demo generation successful:', {
+      console.log('Demo generation successful:', {
         hasHtml: !!result.html,
         hasTitle: !!result.title,
         htmlLength: result.html?.length || 0
@@ -86,7 +86,7 @@ export const LLMDemoGenerationSchema = z
       };
 
     } catch (error) {
-      console.error('❌ Demo generation failed:', error);
+      console.error('Demo generation failed:', error);
 
       // Fallback demo generation
       const fallbackDemo = generateFallbackDemo(args.schema);
@@ -160,7 +160,7 @@ Generate the complete application now.
 }
 
 function generateFallbackDemo(schema: any): any {
-  console.log('🔄 Generating fallback demo...');
+  console.log('Generating fallback demo...');
 
   const tables = schema.tables || [];
   const title = `Database Demo - ${tables.map(t => t.name).join(', ')}`;
@@ -185,14 +185,14 @@ function generateFallbackDemo(schema: any): any {
 </head>
 <body>
     <div class="container">
-        <h1>🗄️ ${title}</h1>
+        <h1>${title}</h1>
         <div class="error">
-            ⚠️ Advanced demo generation failed. This is a fallback interface.
+            Advanced demo generation failed. This is a fallback interface.
         </div>
 
         ${tables.map(table => `
         <div class="table-section">
-            <h3>📋 ${table.name} Table</h3>
+            <h3>${table.name} Table</h3>
             <table>
                 <thead>
                     <tr>
@@ -209,7 +209,7 @@ function generateFallbackDemo(schema: any): any {
         `).join('')}
 
         <div style="margin-top: 20px; padding: 10px; background: #e7f3ff; border-radius: 4px;">
-            <strong>🔧 Fallback Mode:</strong> This is a simplified view. The full AI-generated demo would include:
+            <strong>Fallback Mode:</strong> This is a simplified view. The full AI-generated demo would include:
             <ul>
                 <li>Interactive forms for adding/editing data</li>
                 <li>Working SQLite database with sql.js</li>

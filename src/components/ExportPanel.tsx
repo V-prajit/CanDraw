@@ -44,8 +44,8 @@ export function ExportPanel({ elements }: { elements: any[] }) {
     setError('');
 
     try {
-      // Call the LLM export tool via the backend API
-      console.log('📤 Calling LLM export with', elements.length, 'elements');
+      // Call the export tool via the backend API
+      console.log('Calling export with', elements.length, 'elements');
 
       const response = await fetch('http://localhost:4111/llm-export', {
         method: 'POST',
@@ -64,12 +64,12 @@ export function ExportPanel({ elements }: { elements: any[] }) {
       }
 
       const result = await response.json();
-      console.log('✅ Export successful:', result);
+      console.log('Export successful:', result);
 
       setExportResult(result);
 
     } catch (err) {
-      console.error('❌ Export failed:', err);
+      console.error('Export failed:', err);
       setError(`Export failed: ${err instanceof Error ? err.message : 'Unknown error'}`);
     } finally {
       setIsExporting(false);
@@ -80,7 +80,7 @@ export function ExportPanel({ elements }: { elements: any[] }) {
     try {
       await navigator.clipboard.writeText(content);
       // Could add a toast notification here
-      console.log('📋 Copied to clipboard');
+      console.log('Copied to clipboard');
     } catch (err) {
       console.error('Failed to copy to clipboard:', err);
     }
@@ -121,12 +121,12 @@ ${sql || '-- No SQL generated'}`;
     <Dialog>
       <DialogTrigger asChild>
         <Button className="bg-blue-600 hover:bg-blue-700 text-white">
-          📤 Export SQL
+          Export SQL
         </Button>
       </DialogTrigger>
       <DialogContent className="max-w-4xl max-h-[80vh] overflow-hidden flex flex-col">
         <DialogHeader>
-          <DialogTitle>📤 Export SQL Schema</DialogTitle>
+          <DialogTitle>Export SQL Schema</DialogTitle>
         </DialogHeader>
 
         <div className="flex-1 space-y-4 overflow-hidden">
@@ -143,7 +143,7 @@ ${sql || '-- No SQL generated'}`;
                   <span>AI Analyzing...</span>
                 </div>
               ) : (
-                '🧠 Generate SQL + Description'
+                'Generate SQL + Description'
               )}
             </Button>
 
@@ -155,7 +155,7 @@ ${sql || '-- No SQL generated'}`;
           {/* Error Display */}
           {error && (
             <div className="bg-red-50 border border-red-200 rounded-lg p-4">
-              <p className="text-red-800 text-sm">❌ {error}</p>
+              <p className="text-red-800 text-sm">{error}</p>
             </div>
           )}
 
@@ -164,7 +164,7 @@ ${sql || '-- No SQL generated'}`;
             <div className="bg-green-50 border border-green-200 rounded-lg p-4">
               <div className="flex items-center justify-between mb-2">
                 <p className="text-green-800 text-sm font-medium">
-                  ✅ Export successful! Found {exportResult.exportData.tables?.length || 0} tables
+                  Export successful! Found {exportResult.exportData.tables?.length || 0} tables
                   {exportResult.exportData.relationships && exportResult.exportData.relationships.length > 0 &&
                     ` and ${exportResult.exportData.relationships.length} relationships`
                   }
@@ -175,14 +175,14 @@ ${sql || '-- No SQL generated'}`;
                     onClick={() => copyToClipboard(getExportContent())}
                     className="bg-blue-600 hover:bg-blue-700"
                   >
-                    📋 Copy
+                    Copy
                   </Button>
                   <Button
                     size="sm"
                     onClick={() => downloadFile(getExportContent(), getFileName())}
                     className="bg-purple-600 hover:bg-purple-700"
                   >
-                    💾 Download
+                    Download
                   </Button>
                 </div>
               </div>
@@ -202,7 +202,7 @@ ${sql || '-- No SQL generated'}`;
           {exportResult && !exportResult.success && exportResult.fallbackData && (
             <div className="bg-yellow-50 border border-yellow-200 rounded-lg p-4">
               <p className="text-yellow-800 text-sm font-medium mb-2">
-                ⚠️ AI parsing failed, showing fallback analysis:
+                AI parsing failed, showing fallback analysis:
               </p>
               <pre className="bg-gray-100 p-3 rounded text-xs overflow-auto max-h-40">
                 {JSON.stringify(exportResult.fallbackData, null, 2)}
@@ -213,14 +213,14 @@ ${sql || '-- No SQL generated'}`;
           {/* Schema Summary */}
           {exportResult?.exportData?.tables && (
             <div className="bg-blue-50 border border-blue-200 rounded-lg p-4">
-              <h4 className="font-medium text-blue-800 mb-2">📊 Schema Summary</h4>
+              <h4 className="font-medium text-blue-800 mb-2">Schema Summary</h4>
               <div className="text-sm text-blue-700 space-y-1">
                 {exportResult.exportData.tables.map((table, idx) => (
                   <div key={idx} className="flex items-center space-x-2">
                     <span className="font-medium">{table.name}:</span>
                     <span>{table.fields?.length || 0} fields</span>
                     {table.fields?.some(f => f.isPrimaryKey) && (
-                      <span className="text-xs bg-blue-200 px-1 rounded">🔑 PK</span>
+                      <span className="text-xs bg-blue-200 px-1 rounded">PK</span>
                     )}
                   </div>
                 ))}

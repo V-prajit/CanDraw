@@ -1,6 +1,6 @@
 // ---------------------------------------------
 // Tools are a Mastra primitive to interact with external systems
-// Docs: https://mastra.ai/en/docs/tools-mcp/overview
+// Docs: https://mastra.dev/en/docs/tools-mcp/overview
 // ---------------------------------------------
 
 import { createTool } from '@mastra/core/tools';

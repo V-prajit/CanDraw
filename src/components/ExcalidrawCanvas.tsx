@@ -43,11 +43,11 @@ const ExcalidrawCanvas: React.FC<Props> = ({ elements, onElementsChange }) => {
   const initialData = useMemo(() => ({ elements }), []); // freeze on first render
 
   const handleChange = useCallback((newEls: any[]) => {
-    console.log("🔄 Excalidraw onChange fired with:", newEls.length, "elements");
+    console.log("Excalidraw onChange fired with:", newEls.length, "elements");
 
     // Ignore first empty onChange after mount
     if (ignoreFirstEmptyRef.current && newEls.length === 0) {
-      console.log("🚫 Ignoring first empty onChange after mount");
+      console.log("Ignoring first empty onChange after mount");
       return;
     }
     ignoreFirstEmptyRef.current = false;
@@ -57,23 +57,23 @@ const ExcalidrawCanvas: React.FC<Props> = ({ elements, onElementsChange }) => {
 
     // If these are the exact same elements we just pushed, ignore
     if (newHash === lastPushedHashRef.current) {
-      console.log("🚫 Ignoring onChange - same as elements we just pushed");
+      console.log("Ignoring onChange - same as elements we just pushed");
       return;
     }
 
     // If these are the same elements we just received, ignore
     if (newHash === lastReceivedHashRef.current) {
-      console.log("🚫 Ignoring onChange - same as elements we just received");
+      console.log("Ignoring onChange - same as elements we just received");
       return;
     }
 
     // If we're currently in an update cycle, ignore
     if (isUpdatingRef.current) {
-      console.log("🚫 Ignoring onChange - update in progress");
+      console.log("Ignoring onChange - update in progress");
       return;
     }
 
-    console.log("✅ Valid onChange - propagating to parent", {
+    console.log("Valid onChange - propagating to parent", {
       elementCount: newEls.length,
       newHash: newHash.substring(0, 50) + '...',
       lastPushedHash: lastPushedHashRef.current.substring(0, 50) + '...',
@@ -101,7 +101,7 @@ const ExcalidrawCanvas: React.FC<Props> = ({ elements, onElementsChange }) => {
 
       // Only update if elements actually changed
       if (newHash !== lastPushedHashRef.current) {
-        console.log("🚀 Pushing scene update with", elementsToUpdate.length, "elements");
+        console.log("Pushing scene update with", elementsToUpdate.length, "elements");
 
         isUpdatingRef.current = true;
         lastPushedElementsRef.current = [...elementsToUpdate];
@@ -114,7 +114,7 @@ const ExcalidrawCanvas: React.FC<Props> = ({ elements, onElementsChange }) => {
           isUpdatingRef.current = false;
         }, 50);
       } else {
-        console.log("🚫 Skipping scene update - no changes detected");
+        console.log("Skipping scene update - no changes detected");
       }
 
       updateSceneTimeoutRef.current = null;
@@ -123,10 +123,10 @@ const ExcalidrawCanvas: React.FC<Props> = ({ elements, onElementsChange }) => {
 
   // After mount OR when host elements change, push them into the canvas
   useEffect(() => {
-    console.log("🎨 ExcalidrawCanvas received elements:", elements.length, "elements");
+    console.log("ExcalidrawCanvas received elements:", elements.length, "elements");
 
     if (!apiRef.current) {
-      console.log("📋 API not ready yet, will update when available");
+      console.log("API not ready yet, will update when available");
       return;
     }
 
@@ -134,17 +134,17 @@ const ExcalidrawCanvas: React.FC<Props> = ({ elements, onElementsChange }) => {
 
     // Only update if elements actually changed
     if (currentHash === lastPushedHashRef.current) {
-      console.log("🚫 Skipping update - elements unchanged from our last push");
+      console.log("Skipping update - elements unchanged from our last push");
       return;
     }
 
     // Only update if these aren't the same elements we just received from onChange
     if (currentHash === lastReceivedHashRef.current) {
-      console.log("🚫 Skipping update - these elements came from Excalidraw onChange");
+      console.log("Skipping update - these elements came from Excalidraw onChange");
       return;
     }
 
-    console.log("📤 Scheduling scene update", {
+    console.log("Scheduling scene update", {
       elementCount: elements.length,
       currentHash: currentHash.substring(0, 50) + '...',
       lastPushedHash: lastPushedHashRef.current.substring(0, 50) + '...',

@@ -28,10 +28,10 @@ export function DemoGenerator({ elements }: { elements: any[] }) {
   const [demoUrl, setDemoUrl] = useState<string>('');
 
   const generationSteps: GenerationStep[] = [
-    { id: 'export', label: '🔍 Analyzing UML diagram with AI', status: 'pending' },
-    { id: 'generate', label: '🤖 Generating database application', status: 'pending' },
-    { id: 'create', label: '🏗️ Building interactive demo', status: 'pending' },
-    { id: 'complete', label: '🚀 Demo ready!', status: 'pending' }
+    { id: 'export', label: 'Analyzing UML diagram with AI', status: 'pending' },
+    { id: 'generate', label: 'Generating database application', status: 'pending' },
+    { id: 'create', label: 'Building interactive demo', status: 'pending' },
+    { id: 'complete', label: 'Demo ready!', status: 'pending' }
   ];
 
   const [steps, setSteps] = useState<GenerationStep[]>(generationSteps);
@@ -58,10 +58,10 @@ export function DemoGenerator({ elements }: { elements: any[] }) {
     setSteps(generationSteps.map(step => ({ ...step, status: 'pending' })));
 
     try {
-      // Step 1: Export schema using LLM
+      // Step 1: Export schema
       updateStepStatus('export', 'in_progress');
 
-      console.log('📤 Step 1: Exporting schema...');
+      console.log('Step 1: Exporting schema...');
       const exportResponse = await fetch('http://localhost:4111/llm-export', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
@@ -80,7 +80,7 @@ export function DemoGenerator({ elements }: { elements: any[] }) {
       }
 
       const exportResult = await exportResponse.json();
-      console.log('✅ Export successful:', exportResult);
+      console.log('Export successful:', exportResult);
 
       if (!exportResult.success || !exportResult.exportData) {
         throw new Error('Failed to parse UML diagram');
@@ -88,10 +88,10 @@ export function DemoGenerator({ elements }: { elements: any[] }) {
 
       updateStepStatus('export', 'completed');
 
-      // Step 2: Generate demo using LLM
+      // Step 2: Generate demo
       updateStepStatus('generate', 'in_progress');
 
-      console.log('🤖 Step 2: Generating demo application...');
+      console.log('Step 2: Generating demo application...');
       const demoResponse = await fetch('http://localhost:4111/api/tools/llmDemoGeneration', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
@@ -107,7 +107,7 @@ export function DemoGenerator({ elements }: { elements: any[] }) {
       }
 
       const demoResult = await demoResponse.json();
-      console.log('✅ Demo generation result:', demoResult);
+      console.log('Demo generation result:', demoResult);
 
       updateStepStatus('generate', 'completed');
 
@@ -124,7 +124,7 @@ export function DemoGenerator({ elements }: { elements: any[] }) {
         updateStepStatus('create', 'completed');
         updateStepStatus('complete', 'completed');
 
-        console.log('🚀 Demo ready at URL:', url);
+        console.log('Demo ready at URL:', url);
 
       } else if (demoResult.fallbackDemo) {
         // Use fallback demo
@@ -136,13 +136,13 @@ export function DemoGenerator({ elements }: { elements: any[] }) {
         updateStepStatus('create', 'completed');
         updateStepStatus('complete', 'completed');
 
-        console.log('⚠️ Using fallback demo at URL:', url);
+        console.log('Using fallback demo at URL:', url);
       } else {
         throw new Error(demoResult.error || 'Demo generation failed');
       }
 
     } catch (err) {
-      console.error('❌ Demo generation failed:', err);
+      console.error('Demo generation failed:', err);
       setError(`Demo generation failed: ${err instanceof Error ? err.message : 'Unknown error'}`);
 
       // Mark current step as error
@@ -163,13 +163,13 @@ export function DemoGenerator({ elements }: { elements: any[] }) {
   const getStepIcon = (status: GenerationStep['status']) => {
     switch (status) {
       case 'completed':
-        return '✅';
+        return 'Done';
       case 'in_progress':
-        return '⏳';
+        return 'Working';
       case 'error':
-        return '❌';
+        return 'Error';
       default:
-        return '⚪';
+        return 'Pending';
     }
   };
 
@@ -177,12 +177,12 @@ export function DemoGenerator({ elements }: { elements: any[] }) {
     <Dialog>
       <DialogTrigger asChild>
         <Button className="bg-green-600 hover:bg-green-700 text-white text-lg px-6 py-3">
-          🚀 Generate Live Demo
+          Generate Live Demo
         </Button>
       </DialogTrigger>
       <DialogContent className="max-w-6xl max-h-[90vh] overflow-hidden flex flex-col">
         <DialogHeader>
-          <DialogTitle>🚀 AI-Powered Demo Generation</DialogTitle>
+          <DialogTitle>AI-Powered Demo Generation</DialogTitle>
         </DialogHeader>
 
         <div className="flex-1 space-y-4 overflow-hidden flex flex-col">
@@ -208,7 +208,7 @@ export function DemoGenerator({ elements }: { elements: any[] }) {
               disabled={isGenerating || elements.length === 0}
               className="bg-blue-600 hover:bg-blue-700"
             >
-              {isGenerating ? 'Generating...' : '🧠 Generate with AI'}
+              {isGenerating ? 'Generating...' : 'Generate with AI'}
             </Button>
 
             <div className="text-sm text-gray-600">
@@ -220,7 +220,7 @@ export function DemoGenerator({ elements }: { elements: any[] }) {
                 onClick={openDemoInNewTab}
                 className="bg-green-600 hover:bg-green-700"
               >
-                🔗 Open in New Tab
+                Open in New Tab
               </Button>
             )}
           </div>
@@ -263,7 +263,7 @@ export function DemoGenerator({ elements }: { elements: any[] }) {
           {/* Error Display */}
           {error && (
             <div className="bg-red-50 border border-red-200 rounded-lg p-4">
-              <p className="text-red-800 text-sm">❌ {error}</p>
+              <p className="text-red-800 text-sm">Error: {error}</p>
             </div>
           )}
 
@@ -272,14 +272,14 @@ export function DemoGenerator({ elements }: { elements: any[] }) {
             <div className="bg-green-50 border border-green-200 rounded-lg p-4">
               <div className="flex items-center justify-between">
                 <p className="text-green-800 text-sm font-medium">
-                  ✅ Demo generated successfully: {demoResult.title}
+                  Demo generated successfully: {demoResult.title}
                 </p>
                 <Button
                   size="sm"
                   onClick={openDemoInNewTab}
                   className="bg-green-600 hover:bg-green-700"
                 >
-                  🚀 Launch Demo
+                  Launch Demo
                 </Button>
               </div>
             </div>
@@ -289,7 +289,7 @@ export function DemoGenerator({ elements }: { elements: any[] }) {
           {demoUrl && (
             <div className="flex-1 border rounded-lg overflow-hidden" style={{ minHeight: '500px' }}>
               <div className="bg-gray-100 px-4 py-2 border-b flex items-center justify-between">
-                <span className="text-sm font-medium">🖥️ Live Demo Preview</span>
+                <span className="text-sm font-medium">Live Demo Preview</span>
                 <span className="text-xs text-gray-600">{demoResult?.title}</span>
               </div>
               <iframe
@@ -305,15 +305,15 @@ export function DemoGenerator({ elements }: { elements: any[] }) {
           {/* Demo Information */}
           {demoResult && (
             <div className="bg-blue-50 border border-blue-200 rounded-lg p-4">
-              <h4 className="font-medium text-blue-800 mb-2">📊 Demo Details</h4>
+              <h4 className="font-medium text-blue-800 mb-2">Demo Details</h4>
               <div className="text-sm text-blue-700 space-y-1">
-                <div>🎯 <strong>Type:</strong> Interactive Database Interface</div>
-                <div>🛠️ <strong>Technology:</strong> HTML + JavaScript + sql.js (SQLite)</div>
-                <div>⚡ <strong>Features:</strong> CRUD operations, Form validation, Relationship navigation</div>
+                <div><strong>Type:</strong> Interactive Database Interface</div>
+                <div><strong>Technology:</strong> HTML + JavaScript + sql.js (SQLite)</div>
+                <div><strong>Features:</strong> CRUD operations, Form validation, Relationship navigation</div>
                 {userPrompt && (
-                  <div>💡 <strong>Custom Requirements:</strong> {userPrompt}</div>
+                  <div><strong>Custom Requirements:</strong> {userPrompt}</div>
                 )}
-                <div>🕐 <strong>Generated:</strong> {new Date().toLocaleTimeString()}</div>
+                <div><strong>Generated:</strong> {new Date().toLocaleTimeString()}</div>
               </div>
             </div>
           )}

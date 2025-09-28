@@ -112,7 +112,7 @@ export const NetworkTab: React.FC<NetworkTabProps> = ({
 		switch (log.type) {
 			case 'error':
 			case 'stream-error':
-				return '✕';
+				return 'X';
 			case 'stream-complete':
 				return '◈';
 			case 'response':
@@ -120,7 +120,7 @@ export const NetworkTab: React.FC<NetworkTabProps> = ({
 			case 'request':
 				return '→';
 			case 'handler':
-				return '⚡';
+				return 'H';
 			default:
 				return '•';
 		}

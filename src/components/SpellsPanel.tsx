@@ -35,7 +35,7 @@ export function SpellsPanel({ elements, onSpellCast }: {
     {
       id: 'add-table',
       name: 'Add Table',
-      icon: '🏗️',
+      icon: 'Table',
       description: 'Create a new database table',
       toolName: 'createDatabaseTable',
       defaultParams: {
@@ -52,7 +52,7 @@ export function SpellsPanel({ elements, onSpellCast }: {
     {
       id: 'add-relationship',
       name: 'Link Tables',
-      icon: '🔗',
+      icon: 'Link',
       description: 'Connect tables with relationships',
       toolName: 'connectTablesArrow',
       defaultParams: {
@@ -66,7 +66,7 @@ export function SpellsPanel({ elements, onSpellCast }: {
     {
       id: 'export-schema',
       name: 'Smart Export',
-      icon: '📤',
+      icon: 'Export',
       description: 'AI-powered schema export',
       toolName: 'llmExport',
       defaultParams: {
@@ -78,7 +78,7 @@ export function SpellsPanel({ elements, onSpellCast }: {
     {
       id: 'generate-demo',
       name: 'Live Demo',
-      icon: '🚀',
+      icon: 'Demo',
       description: 'Generate working database app',
       toolName: 'llmDemoGeneration',
       defaultParams: {
@@ -107,7 +107,7 @@ export function SpellsPanel({ elements, onSpellCast }: {
     setRecentActions(prev => [newAction, ...prev.slice(0, 9)]); // Keep last 10 actions
 
     try {
-      console.log(`🔮 Casting spell: ${spell.name}`, newAction.input);
+      console.log(`Casting spell: ${spell.name}`, newAction.input);
 
       // Call the appropriate tool based on spell configuration
       let response;
@@ -163,7 +163,7 @@ export function SpellsPanel({ elements, onSpellCast }: {
           : action
       ));
 
-      console.log(`✅ Spell completed: ${spell.name}`, result);
+      console.log(`Spell completed: ${spell.name}`, result);
 
       // Trigger callback if provided
       if (onSpellCast) {
@@ -171,7 +171,7 @@ export function SpellsPanel({ elements, onSpellCast }: {
       }
 
     } catch (error) {
-      console.error(`❌ Spell failed: ${spell.name}`, error);
+      console.error(`Spell failed: ${spell.name}`, error);
 
       // Update action with error
       setRecentActions(prev => prev.map(action =>
@@ -201,10 +201,10 @@ export function SpellsPanel({ elements, onSpellCast }: {
 
   const getStatusIcon = (status: AgentAction['status']) => {
     switch (status) {
-      case 'completed': return '✅';
+      case 'completed': return 'Done';
       case 'running': return '⏳';
-      case 'error': return '❌';
-      default: return '⚪';
+      case 'error': return 'Error';
+      default: return 'Pending';
     }
   };
 
@@ -225,7 +225,7 @@ export function SpellsPanel({ elements, onSpellCast }: {
       <div className="flex items-center justify-between p-3 border-b border-gray-200">
         {isExpanded && (
           <h3 className="font-bold text-gray-800 flex items-center space-x-2">
-            <span>🔮</span>
+            <span>Spells</span>
             <span>Agent Spells</span>
           </h3>
         )}
@@ -235,7 +235,7 @@ export function SpellsPanel({ elements, onSpellCast }: {
           onClick={() => setIsExpanded(!isExpanded)}
           className="text-gray-600 hover:text-gray-800"
         >
-          {isExpanded ? '←' : '🔮'}
+          {isExpanded ? '←' : 'Spells'}
         </Button>
       </div>
 
@@ -271,13 +271,13 @@ export function SpellsPanel({ elements, onSpellCast }: {
           {/* Agent Timeline Inspector */}
           <div className="p-3">
             <h4 className="text-sm font-medium text-gray-700 mb-2 flex items-center space-x-1">
-              <span>📋</span>
+              <span>Actions</span>
               <span>Agent Timeline</span>
             </h4>
 
             {recentActions.length === 0 ? (
               <div className="text-xs text-gray-500 italic py-2">
-                No agent actions yet. Cast a spell to see the magic! ✨
+                No agent actions yet. Cast a spell to see the action!
               </div>
             ) : (
               <div className="space-y-2 max-h-40 overflow-y-auto">

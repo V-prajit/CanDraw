@@ -16,9 +16,8 @@ import { FloatingCedarChat } from '@/cedar/components/chatComponents/FloatingCed
 import { SidePanelCedarChat } from '@/cedar/components/chatComponents/SidePanelCedarChat';
 import { DebuggerPanel } from '@/cedar/components/debugger';
 
-// Import our new LLM-powered components
+// Import our new components
 import { ExportPanel } from '@/components/ExportPanel';
-import { DemoGenerator } from '@/components/DemoGenerator';
 
 type ChatMode = 'floating' | 'sidepanel' | 'caption';
 const ExcalidrawCanvas = dynamic(() => import('@/components/ExcalidrawCanvas'), { ssr: false });
@@ -26,7 +25,7 @@ const ExcalidrawCanvas = dynamic(() => import('@/components/ExcalidrawCanvas'), 
 export default function HomePage() {
   const [chatMode, setChatMode] = React.useState<ChatMode>('floating');
 
-  // ✅ Manage state locally with React
+  // Manage state locally with React
   const [excalidrawElements, setExcalidrawElements] = React.useState<any[]>([]);
 
   // Add state management tracking
@@ -248,7 +247,7 @@ export default function HomePage() {
       version: (element.version || 1) + 1,
       versionNonce: Math.floor(Math.random() * 2147483647),
     };
-    console.log(`🎯 Snapping arrow ${element.id} from (${element.x.toFixed(1)}, ${element.y.toFixed(1)}) to (${newArrowX.toFixed(1)}, ${newArrowY.toFixed(1)})`);
+    console.log(`Snapping arrow ${element.id} from (${element.x.toFixed(1)}, ${element.y.toFixed(1)}) to (${newArrowX.toFixed(1)}, ${newArrowY.toFixed(1)})`);
 
     return updatedArrow;
   });
@@ -301,7 +300,7 @@ export default function HomePage() {
   })();
 
   if (hasChanges) {
-    console.log('🎯 Snapping arrows to rectangle edge centers');
+    console.log('Snapping arrows to rectangle edge centers');
     // setExcalidrawElements(updatedElements);
     setExcalidrawElements(deduplicatedElements);
   }
@@ -310,7 +309,7 @@ export default function HomePage() {
 
   // Debug: Log when React state changes
   React.useEffect(() => {
-    console.log('🔄 React state updated:', excalidrawElements.length, 'elements:', excalidrawElements);
+    console.log('React state updated:', excalidrawElements.length, 'elements:', excalidrawElements);
   }, [excalidrawElements]);
 
   React.useEffect(() => {
@@ -320,7 +319,7 @@ export default function HomePage() {
     }
   }, []);
 
-  // ✅ Register canvas state using legacy API for 0.0.12 backend compatibility
+  // Register canvas state using legacy API for 0.0.12 backend compatibility
   useRegisterState({
     key: 'excalidrawElements',
     value: excalidrawElements,
@@ -330,7 +329,7 @@ export default function HomePage() {
       const newCount = Array.isArray(newValue) ? newValue.length : 0;
       const timeSinceLastUpdate = now - lastUpdateRef.current.timestamp;
 
-      console.log('🔧 useRegisterState setValue called:', {
+      console.log('useRegisterState setValue called:', {
         newCount,
         currentCount,
         timeSinceLastUpdate,
@@ -349,7 +348,7 @@ export default function HomePage() {
 
       // Case 2: Normal increase or same count - always allow
       if (newCount >= currentCount) {
-        console.log('✅ Accepting state update (increase/same):', {
+        console.log('Accepting state update (increase/same):', {
           from: currentCount,
           to: newCount,
           change: newCount - currentCount
@@ -367,7 +366,7 @@ export default function HomePage() {
 
       // Allow reduction if it's recent and not a significant loss
       if (isRecentUpdate && !isSignificantReduction) {
-        console.log('✅ Allowing minor recent reduction:', {
+        console.log('Allowing minor recent reduction:', {
           from: currentCount,
           to: newCount,
           change: newCount - currentCount,
@@ -380,7 +379,7 @@ export default function HomePage() {
 
       // Allow reduction if it seems to be part of a programmatic sequence
       if (isFromProgrammaticUpdate && isRecentUpdate) {
-        console.log('✅ Allowing programmatic sequence reduction:', {
+        console.log('Allowing programmatic sequence reduction:', {
           from: currentCount,
           to: newCount,
           change: newCount - currentCount,
@@ -411,12 +410,12 @@ export default function HomePage() {
         name: 'addElement',
         description: 'Add an Excalidraw element to the canvas',
         execute: (current: any[], setValueFunc: any, args: any) => {
-          console.log('🎯 EXECUTE CALLED:', { current, setValueFunc, args });
+          console.log('EXECUTE CALLED:', { current, setValueFunc, args });
 
           // Extract the newElement from backend args - backend sends { newElement: {...} }
-          console.log('🔍 RAW args received from backend:', args);
-          console.log('🔍 Args type:', typeof args, 'Is null/undefined:', args == null);
-          console.log('🔍 Args keys:', args ? Object.keys(args) : 'no keys');
+          console.log('RAW args received from backend:', args);
+          console.log('Args type:', typeof args, 'Is null/undefined:', args == null);
+          console.log('Args keys:', args ? Object.keys(args) : 'no keys');
 
           const elementData = args?.newElement || args;
           console.log('📦 Element data to add:', elementData);
@@ -473,7 +472,7 @@ export default function HomePage() {
               }
             }
 
-            console.log(`🎯 Smart positioning: placed at (${targetX}, ${targetY}) after ${attempts} attempts`);
+            console.log(`Smart positioning: placed at (${targetX}, ${targetY}) after ${attempts} attempts`);
           }
 
           // Create proper Excalidraw element with backend parameters
@@ -482,7 +481,7 @@ export default function HomePage() {
 
           // Determine element type from backend data
           const elementType = elementData.type || 'rectangle';
-          console.log('🔧 Creating element of type:', elementType);
+          console.log('Creating element of type:', elementType);
 
           // Base properties common to all elements
           const baseElement = {
@@ -525,19 +524,19 @@ export default function HomePage() {
               endArrowhead: elementData.endArrowhead || 'arrow',
             };
 
-            // 🔧 ARROW BINDING ENHANCEMENT: Auto-detect and bind to tables
-            console.log('🔧 Processing arrow for auto-binding');
+            // ARROW BINDING ENHANCEMENT: Auto-detect and bind to tables
+            console.log('Processing arrow for auto-binding');
 
             // Helper function to find table at coordinates
             const findTableAtCoordinates = (x: number, y: number) => {
-              console.log(`🔍 Looking for table at coordinates (${x}, ${y}) among ${current.length} elements`);
+              console.log(`Looking for table at coordinates (${x}, ${y}) among ${current.length} elements`);
 
               // Look for table background elements (ID pattern: *_bg)
               const tableElements = current.filter(el =>
                 el && el.id && el.id.endsWith('_bg') && el.type === 'rectangle'
               );
 
-              console.log(`🔍 Found ${tableElements.length} table background elements:`,
+              console.log(`Found ${tableElements.length} table background elements:`,
                 tableElements.map(t => ({ id: t.id, x: t.x, y: t.y, w: t.width, h: t.height }))
               );
 
@@ -550,15 +549,15 @@ export default function HomePage() {
                   y <= table.y + table.height
                 );
 
-                console.log(`🔍 Checking table ${table.id}: bounds (${table.x}, ${table.y}, ${table.width}, ${table.height}) - match: ${withinBounds}`);
+                console.log(`Checking table ${table.id}: bounds (${table.x}, ${table.y}, ${table.width}, ${table.height}) - match: ${withinBounds}`);
 
                 if (withinBounds) {
-                  console.log(`🎯 Found table at coordinates: ${table.id}`);
+                  console.log(`Found table at coordinates: ${table.id}`);
                   return table;
                 }
               }
 
-              console.log('❌ No table found at the given coordinates');
+              console.log('No table found at the given coordinates');
               return null;
             };
 
@@ -586,7 +585,7 @@ export default function HomePage() {
             const endX = startX + (points[1]?.[0] || 100);
             const endY = startY + (points[1]?.[1] || 0);
 
-            console.log('🎯 Arrow coordinates:', { startX, startY, endX, endY });
+            console.log('Arrow coordinates:', { startX, startY, endX, endY });
 
             // Auto-detect source table if no binding exists
             if (!newElement.startBinding) {
@@ -598,7 +597,7 @@ export default function HomePage() {
                   focus: focus,
                   gap: 4
                 };
-                console.log('🔗 Created auto start binding:', newElement.startBinding);
+                console.log('Created auto start binding:', newElement.startBinding);
               }
             }
 
@@ -612,7 +611,7 @@ export default function HomePage() {
                   focus: focus,
                   gap: 4
                 };
-                console.log('🔗 Created auto end binding:', newElement.endBinding);
+                console.log('Created auto end binding:', newElement.endBinding);
               }
             }
           } else if (elementType === 'text') {
@@ -636,10 +635,10 @@ export default function HomePage() {
             };
           }
 
-          // 🔧 BIDIRECTIONAL BINDING: Update boundElements on target shapes
+          // BIDIRECTIONAL BINDING: Update boundElements on target shapes
           let updatedCurrent = current;
           if (elementType === 'arrow' && (newElement.startBinding || newElement.endBinding)) {
-            console.log('🔧 Updating boundElements for arrow binding');
+            console.log('Updating boundElements for arrow binding');
 
             updatedCurrent = current.map(element => {
               // Check if this element is a binding target
@@ -655,7 +654,7 @@ export default function HomePage() {
               const alreadyBound = currentBoundElements.some(bound => bound?.id === newElement.id);
 
               if (alreadyBound) {
-                console.log(`⚠️ Arrow ${newElement.id} already bound to ${element.id}`);
+                console.log(`Arrow ${newElement.id} already bound to ${element.id}`);
                 return element; // Already bound
               }
 
@@ -665,17 +664,17 @@ export default function HomePage() {
                 boundElements: [...currentBoundElements, newBoundElement]
               };
 
-              console.log(`🔗 Added arrow ${newElement.id} to boundElements of ${element.id}`);
+              console.log(`Added arrow ${newElement.id} to boundElements of ${element.id}`);
               return updatedElement;
             });
           }
 
           const newElements = [...updatedCurrent, newElement];
-          console.log('🚀 About to call setValueFunc with:', newElements);
-          console.log('📍 New element position:', { x: newElement.x, y: newElement.y, width: newElement.width, height: newElement.height });
+          console.log('About to call setValueFunc with:', newElements);
+          console.log('New element position:', { x: newElement.x, y: newElement.y, width: newElement.width, height: newElement.height });
 
           // DEFENSIVE: Verify state consistency before calling setValueFunc
-          console.log('🔍 State consistency check:', {
+          console.log('State consistency check:', {
             currentArrayLength: current.length,
             newArrayLength: newElements.length,
             reactStateLength: excalidrawElements.length,
@@ -696,14 +695,14 @@ export default function HomePage() {
         name: 'addMultipleElements',
         description: 'Add multiple Excalidraw elements to the canvas at once',
         execute: (current: any[], setValueFunc: any, args: any) => {
-          console.log('🎯 ADD_MULTIPLE_ELEMENTS EXECUTE CALLED:', { current, args });
+          console.log('ADD_MULTIPLE_ELEMENTS EXECUTE CALLED:', { current, args });
 
           // Extract the elements array from backend args
           const elementsToAdd = args?.elements || [];
-          console.log('📦 Elements to add:', elementsToAdd.length, 'elements');
+          console.log('Elements to add:', elementsToAdd.length, 'elements');
 
           if (!Array.isArray(elementsToAdd) || elementsToAdd.length === 0) {
-            console.warn('⚠️ No elements to add');
+            console.warn('No elements to add');
             return;
           }
 
@@ -801,12 +800,12 @@ export default function HomePage() {
               };
             }
 
-            console.warn('⚠️ Unknown element type:', elementData.type);
+            console.warn('Unknown element type:', elementData.type);
             return null;
           }).filter(Boolean); // Remove null elements
 
           const newElements = [...current, ...processedElements];
-          console.log('🚀 About to add', processedElements.length, 'elements. Total:', newElements.length);
+          console.log('About to add', processedElements.length, 'elements. Total:', newElements.length);
 
           // Mark this as a programmatic update and call setValueFunc
           lastUpdateRef.current = {
@@ -820,9 +819,9 @@ export default function HomePage() {
     }
   });
 
-  // ✅ Context subscription handled by legacy registration - backend already receives state
+  // Context subscription handled by legacy registration - backend already receives state
 
-  // ✅ Register the missing FRONTEND tool so "Tool addNewTextLine not found" goes away
+  // Register the missing FRONTEND tool so "Tool addNewTextLine not found" goes away
   useRegisterFrontendTool({
     name: 'addNewTextLine', // must match your backend toolId
     description: 'Add a new text line to the Excalidraw canvas',
@@ -863,22 +862,21 @@ export default function HomePage() {
       {/* 2) Main Action Buttons - Top Right */}
       <div className="absolute top-4 right-4 space-x-3 z-50">
         <ExportPanel elements={excalidrawElements} />
-        <DemoGenerator elements={excalidrawElements} />
       </div>
 
 
       {/* 3) Floating chat - positioned to not interfere with new components */}
       <FloatingCedarChat
         side="right"
-        title="🧠 UML AI Assistant"
-        collapsedLabel="Chat with AI"
+        title="Cedar Assistant"
+        collapsedLabel="Chat with Cedar"
       />
 
       {/* 4) Optional: Element count indicator */}
       {excalidrawElements.length > 0 && (
         <div className="absolute bottom-4 left-4 z-40">
           <div className="bg-black/70 text-white px-3 py-1 rounded-full text-sm">
-            📊 {excalidrawElements.length} elements on canvas
+{excalidrawElements.length} elements on canvas
           </div>
         </div>
       )}
