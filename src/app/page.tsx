@@ -33,7 +33,6 @@ export default function HomePage() {
   });
   
   React.useEffect(() => {
-    console.log("hifdlsnfsekdjbnfdskbnfdskjn")
     if (!excalidrawElements || excalidrawElements.length === 0) {
       return;
     }
@@ -151,11 +150,44 @@ export default function HomePage() {
     }
 
     // Step 10: Calculate snapped edge center positions
-    const startEdgePoint = getEdgeCenterPoint(startRect, currentEndX, currentEndY);
-    const endEdgePoint = getEdgeCenterPoint(endRect, currentStartX, currentStartY);
+    // Step 10: Calculate snapped edge center positions - choose edges for shortest arrow
+    const getAllEdgePoints = (rect: any) => {
+      const centerX = rect.x + rect.width / 2;
+      const centerY = rect.y + rect.height / 2;
+      return [
+        { x: rect.x, y: centerY, side: 'left' },                    // Left edge
+        { x: rect.x + rect.width, y: centerY, side: 'right' },     // Right edge  
+        { x: centerX, y: rect.y, side: 'top' },                    // Top edge
+        { x: centerX, y: rect.y + rect.height, side: 'bottom' }    // Bottom edge
+      ];
+    };
 
-    console.log("startEdgePoint:", startEdgePoint);
-    console.log("endEdgePoint:", endEdgePoint);
+    const startEdgeOptions = getAllEdgePoints(startRect);
+    const endEdgeOptions = getAllEdgePoints(endRect);
+
+    let bestStartEdge = startEdgeOptions[0];
+    let bestEndEdge = endEdgeOptions[0];
+    let shortestDistance = Infinity;
+
+    // Try all combinations to find the shortest arrow
+    for (const startEdge of startEdgeOptions) {
+      for (const endEdge of endEdgeOptions) {
+        const distance = Math.sqrt(
+          Math.pow(endEdge.x - startEdge.x, 2) + Math.pow(endEdge.y - startEdge.y, 2)
+        );
+        
+        if (distance < shortestDistance) {
+          shortestDistance = distance;
+          bestStartEdge = startEdge;
+          bestEndEdge = endEdge;
+        }
+      }
+    }
+
+    const startEdgePoint = bestStartEdge;
+    const endEdgePoint = bestEndEdge;
+
+    console.log(`📏 Chose shortest arrow: ${bestStartEdge.side} to ${bestEndEdge.side} (distance: ${shortestDistance.toFixed(1)})`);
 
     const newArrowX = startEdgePoint.x;
     const newArrowY = startEdgePoint.y;
