@@ -26,6 +26,7 @@ export const ChatInput: React.FC<{
   stream?: boolean; // Whether to use streaming for responses
 }> = ({ handleFocus, handleBlur, isInputFocused, className = '', stream = true }) => {
   const [isFocused, setIsFocused] = React.useState(false);
+  const lastProcessedVoiceMessageId = React.useRef<string | null>(null);
 
   const { editor, isEditorEmpty, handleSubmit } = useCedarEditor({
     onFocus: () => {
@@ -141,13 +142,38 @@ export const ChatInput: React.FC<{
     // Add the event listener
     window.addEventListener('keydown', handleGlobalKeyDown);
 
-    // Clean up
-    return () => {
-      window.removeEventListener('keydown', handleGlobalKeyDown);
-    };
-  }, [handleVoiceToggle]);
+          // Clean up
+          return () => {
+            window.removeEventListener('keydown', handleGlobalKeyDown);
+          };
+        }, [handleVoiceToggle]);
+    
+    useEffect(() => {
+      // Find the latest user message from a voice input that we haven't processed yet.
+      const voiceMessage = [...messages]
+        .reverse()
+        .find(
+          (msg) =>
+            msg.role === 'user' &&
+            msg.metadata?.source === 'voice' &&
+            msg.id !== lastProcessedVoiceMessageId.current,
+        );
 
-  return (
+      if (voiceMessage) {
+        // 1. Remember this message's ID so we don't process it again.
+        lastProcessedVoiceMessageId.current = voiceMessage.id;
+
+        // 2. Set the editor's content to the transcribed text.
+        if (editor && voiceMessage.content) {
+          editor.commands.setContent(voiceMessage.content);
+          console.log(voiceMessage.content)
+          // 3. Call handleSubmit to trigger your Excalidraw logic.
+          setTimeout(() => {
+            handleSubmit();
+          }, 100);
+        }
+      }
+    }, [messages, editor, handleSubmit]);  return (
     <div className={cn('bg-gray-800/10 dark:bg-gray-600/80 rounded-lg p-3 text-sm', className)}>
       {/* Input context row showing selected context nodes */}
       <ContextBadgeRow editor={editor} />
