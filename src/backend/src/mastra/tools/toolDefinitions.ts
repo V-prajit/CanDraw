@@ -248,7 +248,7 @@ export const CreateDatabaseTableSchema = z
   .object({
     // table info
     tableName: z.string().min(1, 'Table name cannot be empty').describe('The name of the database table'),
-    fields: z.array(z.string()).default([]).describe('Array of field names for the table'),
+    fields: z.array(z.object({ name: z.string(), type: z.string().optional() })).default([]).describe('Array of field objects for the table, each with a name and optional type'),
     primaryKeys: z.array(z.string()).optional().describe('Array of primary key field names'),
 
     // position
@@ -294,7 +294,7 @@ export const CreateDatabaseTableSchema = z
     };
 
     // Auto-detect 'id' as primary key if no primary keys are provided
-    if (processedArgs.primaryKeys.length === 0 && processedArgs.fields.includes('id')) {
+    if (processedArgs.primaryKeys.length === 0 && processedArgs.fields.map(f => f.name).includes('id')) {
       processedArgs.primaryKeys.push('id');
     }
 
@@ -372,7 +372,8 @@ export const CreateDatabaseTableSchema = z
     // 4. Field separators and text
     processedArgs.fields.forEach((field, index) => {
       const fieldY = processedArgs.y + processedArgs.headerHeight + (index * processedArgs.fieldHeight);
-      const isPrimaryKey = processedArgs.primaryKeys.includes(field);
+      const isPrimaryKey = processedArgs.primaryKeys.includes(field.name);
+      const fieldTextContent = field.type ? `${field.name} (${field.type})` : field.name;
 
       // Field separator line (except for the last field)
       if (index > 0) {
@@ -410,14 +411,14 @@ export const CreateDatabaseTableSchema = z
         strokeWidth: 1,
         roughness: 0,
         opacity: 1,
-        text: field,
+        text: fieldTextContent,
         fontSize: 14,
         fontFamily: 1,
         textAlign: 'left',
         verticalAlign: 'top',
         baseline: 14, // Add baseline for text positioning
         containerId: null, // Standalone text element
-        originalText: field, // Add original text property
+        originalText: fieldTextContent, // Add original text property
         groupIds: [tableGroupId], // Group with other table elements
       };
       elements.push(fieldText);
@@ -428,7 +429,7 @@ export const CreateDatabaseTableSchema = z
             type: 'line',
             x: fieldText.x,
             y: fieldText.y + fieldText.height - 2,
-            width: field.length * 8,
+            width: field.name.length * 8,
             height: 0,
             angle: 0,
             strokeColor: processedArgs.textColor,
@@ -437,7 +438,7 @@ export const CreateDatabaseTableSchema = z
             strokeWidth: 1,
             roughness: 0,
             opacity: 1,
-            points: [[0, 0], [field.length * 7, 0]],
+            points: [[0, 0], [field.name.length * 7, 0]],
             groupIds: [tableGroupId],
         });
       }
