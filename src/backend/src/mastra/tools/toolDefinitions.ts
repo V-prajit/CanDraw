@@ -3,6 +3,7 @@ import {
   createMastraToolForStateSetter,
   createRequestAdditionalContextTool,
 } from '@cedar-os/backend';
+import { createTool } from '@mastra/core/tools';
 import { streamJSONEvent } from '../../utils/streamUtils';
 import { z } from 'zod';
 
@@ -152,6 +153,81 @@ export const addRectangleTool = createMastraToolForStateSetter(
     errorSchema: ErrorResponseSchema,
   },
 );
+export const analyzeCanvasTool = createTool({
+  id: 'analyzeCanvas',
+  description: 'Analyze what elements are currently on the canvas with validation',
+  inputSchema: z.object({}),
+  outputSchema: z.object({
+    analysis: z.string(),
+    elementCount: z.number(),
+    debug: z.string().optional(),
+  }),
+  execute: async ({ context }: { context: any }) => {
+    const runtimeContext = context?.runtimeContext;
+    const additionalContext = runtimeContext?.get('additionalContext');
+    
+    // Enhanced debugging
+    console.log('🔍 Backend analyzeCanvas - Full additionalContext keys:', Object.keys(additionalContext || {}));
+    console.log('🔍 Backend analyzeCanvas - canvasElements raw:', additionalContext?.canvasElements);
+    console.log('🔍 Backend analyzeCanvas - elementCount from context:', additionalContext?.elementCount);
+    
+    const canvasElementsString = additionalContext?.canvasElements || '[]';
+    const contextElementCount = additionalContext?.elementCount || 0;
+    
+    let elements = [];
+    let parseError = null;
+    
+    try {
+      elements = JSON.parse(canvasElementsString);
+    } catch (error: any) {
+      parseError = error.message;
+      console.error('🚨 JSON parse error:', error);
+    }
+    
+    const foundCount = elements.length;
+    
+    // VALIDATION: Check for inconsistencies
+    let debugInfo = '';
+    let finalAnalysis = '';
+    
+    if (foundCount === 0 && contextElementCount > 0) {
+      // FLAKY CASE: Context says there should be elements but we found none
+      debugInfo = `⚠️  INCONSISTENCY DETECTED: Context reports ${contextElementCount} elements but received empty array. Possible state sync issue.`;
+      finalAnalysis = `Canvas analysis is unreliable - context indicates ${contextElementCount} elements exist but received empty data. Please try adding a new element to refresh the state, or there may be a temporary sync issue.`;
+      
+      console.warn('🚨 FLAKY BEHAVIOR DETECTED:', {
+        contextElementCount,
+        foundCount,
+        canvasElementsString: canvasElementsString.substring(0, 100)
+      });
+    } else if (foundCount === 0) {
+      // CONFIRMED EMPTY: Both counts agree it's empty
+      finalAnalysis = 'Canvas is confirmed empty - no elements detected.';
+      debugInfo = '✅ Confirmed empty state';
+    } else {
+      // SUCCESS: Found elements
+      const elementSummary = elements.map((e, i) => {
+        const pos = e.x !== undefined && e.y !== undefined ? ` at (${Math.round(e.x)}, ${Math.round(e.y)})` : '';
+        const size = e.width && e.height ? ` [${Math.round(e.width)}×${Math.round(e.height)}]` : '';
+        return `${i+1}. ${e.type}${pos}${size}`;
+      }).join('\n');
+      
+      finalAnalysis = `Found ${foundCount} element${foundCount === 1 ? '' : 's'} on canvas:\n${elementSummary}`;
+      debugInfo = `✅ Successfully parsed ${foundCount} elements`;
+      
+      console.log('✅ Canvas analysis successful:', {
+        foundCount,
+        types: elements.map(e => e.type)
+      });
+    }
+    
+    return {
+      analysis: finalAnalysis,
+      elementCount: foundCount,
+      debug: debugInfo + (parseError ? ` | Parse error: ${parseError}` : '')
+    };
+  },
+});
 
 /**
  * Registry of all available tools organized by category
@@ -166,6 +242,10 @@ export const TOOL_REGISTRY = {
   shapeManipulation: {
     addRectangleTool,
   },
+  // NEW category for canvas analysis
+  canvasAnalysis: {
+    analyzeCanvasTool,
+  },
 };
 
 // Export all tools as an array for easy registration
@@ -173,4 +253,5 @@ export const ALL_TOOLS = [
   changeTextTool,
   addNewTextLineTool,
   addRectangleTool, // NEW
+  analyzeCanvasTool,
 ];

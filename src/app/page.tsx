@@ -199,7 +199,23 @@ export default function HomePage() {
     }
   });
 
-  // ✅ Context subscription handled by legacy registration - backend already receives state
+  // ✅ CRITICAL: Send stringified canvas elements to backend
+  useSubscribeStateToAgentContext('excalidrawElements', (elements) => {
+    const elementsArray = Array.isArray(elements) ? elements : [];
+    const jsonString = JSON.stringify(elementsArray);
+    
+    console.log('📤 Frontend sending to backend:', {
+      elementCount: elementsArray.length,
+      jsonLength: jsonString.length,
+      preview: jsonString.substring(0, 100)
+    });
+    
+    return {
+      canvasElements: jsonString,
+      elementCount: elementsArray.length,
+      timestamp: Date.now()
+    };
+  });
 
   // ✅ Register the missing FRONTEND tool so "Tool addNewTextLine not found" goes away
   useRegisterFrontendTool({
