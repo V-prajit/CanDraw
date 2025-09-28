@@ -216,18 +216,6 @@ export const ChatInput: React.FC<{
           >
             <Mic className="w-4 h-4" />
           </button>
-          <button
-            type="button"
-            className="p-1 text-gray-600 dark:text-gray-200 hover:text-black dark:hover:text-white cursor-pointer"
-          >
-            <Image className="w-4 h-4" />
-          </button>
-          <button
-            type="button"
-            className="p-1 text-gray-600 dark:text-gray-200 hover:text-black dark:hover:text-white cursor-pointer"
-          >
-            <Code className="w-4 h-4" />
-          </button>
         </div>
         <Container3DButton
           id="send-chat"
