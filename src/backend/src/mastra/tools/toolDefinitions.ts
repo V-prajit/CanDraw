@@ -249,6 +249,7 @@ export const CreateDatabaseTableSchema = z
     // table info
     tableName: z.string().min(1, 'Table name cannot be empty').describe('The name of the database table'),
     fields: z.array(z.string()).default([]).describe('Array of field names for the table'),
+    primaryKeys: z.array(z.string()).optional().describe('Array of primary key field names'),
 
     // position
     x: z.number().default(100).describe('Left (x) position for the table'),
@@ -279,6 +280,7 @@ export const CreateDatabaseTableSchema = z
     const processedArgs = {
       tableName: safeArgs.tableName || 'NewTable',
       fields: safeArgs.fields || [],
+      primaryKeys: safeArgs.primaryKeys || [],
       x: safeArgs.x ?? 100,
       y: safeArgs.y ?? 100,
       tableWidth: safeArgs.tableWidth ?? 250,
@@ -290,6 +292,11 @@ export const CreateDatabaseTableSchema = z
       textColor: safeArgs.textColor ?? '#000000',
       tableId: safeArgs.tableId ?? `table_${now}_${random}`,
     };
+
+    // Auto-detect 'id' as primary key if no primary keys are provided
+    if (processedArgs.primaryKeys.length === 0 && processedArgs.fields.includes('id')) {
+      processedArgs.primaryKeys.push('id');
+    }
 
     // Calculate total table height
     const totalHeight = processedArgs.headerHeight + (processedArgs.fields.length * processedArgs.fieldHeight);
@@ -365,6 +372,7 @@ export const CreateDatabaseTableSchema = z
     // 4. Field separators and text
     processedArgs.fields.forEach((field, index) => {
       const fieldY = processedArgs.y + processedArgs.headerHeight + (index * processedArgs.fieldHeight);
+      const isPrimaryKey = processedArgs.primaryKeys.includes(field);
 
       // Field separator line (except for the last field)
       if (index > 0) {
@@ -388,7 +396,7 @@ export const CreateDatabaseTableSchema = z
       }
 
       // Field text
-      elements.push({
+      const fieldText = {
         id: `${processedArgs.tableId}_field_${index}`,
         type: 'text',
         x: processedArgs.x + 10, // Left-aligned with padding
@@ -411,7 +419,28 @@ export const CreateDatabaseTableSchema = z
         containerId: null, // Standalone text element
         originalText: field, // Add original text property
         groupIds: [tableGroupId], // Group with other table elements
-      });
+      };
+      elements.push(fieldText);
+
+      if (isPrimaryKey) {
+        elements.push({
+            id: `${processedArgs.tableId}_field_${index}_underline`,
+            type: 'line',
+            x: fieldText.x,
+            y: fieldText.y + fieldText.height - 2,
+            width: field.length * 8,
+            height: 0,
+            angle: 0,
+            strokeColor: processedArgs.textColor,
+            backgroundColor: 'transparent',
+            fillStyle: 'solid',
+            strokeWidth: 1,
+            roughness: 0,
+            opacity: 1,
+            points: [[0, 0], [field.length * 7, 0]],
+            groupIds: [tableGroupId],
+        });
+      }
     });
 
     const result = {
