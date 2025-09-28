@@ -248,7 +248,7 @@ export const CreateDatabaseTableSchema = z
   .object({
     // table info
     tableName: z.string().min(1, 'Table name cannot be empty').describe('The name of the database table'),
-    fields: z.array(z.object({ name: z.string(), type: z.string().optional() })).default([]).describe('Array of field objects for the table, each with a name and optional type'),
+    fields: z.array(z.object({ name: z.string(), type: z.string().optional() })).default([]).describe('Array of field objects for the table, each with a name and an optional SQL data type (e.g., varchar, int, boolean)'),
     primaryKeys: z.array(z.string()).optional().describe('Array of primary key field names'),
 
     // position
@@ -275,11 +275,23 @@ export const CreateDatabaseTableSchema = z
 
     console.log('🔧 CreateDatabaseTableSchema.transform() called with args:', args);
 
+    const typeMapping: { [key: string]: string } = {
+      string: 'varchar',
+      number: 'int',
+      boolean: 'boolean',
+      date: 'timestamp',
+      object: 'jsonb',
+      array: 'jsonb',
+      buffer: 'bytea',
+    };
+
     // Ensure defaults are applied
     const safeArgs = args || {};
     const processedArgs = {
       tableName: safeArgs.tableName || 'NewTable',
-      fields: safeArgs.fields || [],
+      fields: safeArgs.fields 
+        ? safeArgs.fields.map(f => ({ ...f, type: f.type ? typeMapping[f.type.toLowerCase()] || f.type.toLowerCase() : undefined }))
+        : [],
       primaryKeys: safeArgs.primaryKeys || [],
       x: safeArgs.x ?? 100,
       y: safeArgs.y ?? 100,
