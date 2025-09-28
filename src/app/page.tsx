@@ -16,6 +16,10 @@ import { FloatingCedarChat } from '@/cedar/components/chatComponents/FloatingCed
 import { SidePanelCedarChat } from '@/cedar/components/chatComponents/SidePanelCedarChat';
 import { DebuggerPanel } from '@/cedar/components/debugger';
 
+// Import our new LLM-powered components
+import { ExportPanel } from '@/components/ExportPanel';
+import { DemoGenerator } from '@/components/DemoGenerator';
+
 type ChatMode = 'floating' | 'sidepanel' | 'caption';
 const ExcalidrawCanvas = dynamic(() => import('@/components/ExcalidrawCanvas'), { ssr: false });
 
@@ -855,9 +859,29 @@ export default function HomePage() {
           onElementsChange={setExcalidrawElements}
         />
       </div>
-  
-      {/* 2) Floating chat only */}
-      <FloatingCedarChat side="right" title="Excalidraw Copilot" collapsedLabel="Chat with Cedar" />
+
+      {/* 2) Main Action Buttons - Top Right */}
+      <div className="absolute top-4 right-4 space-x-3 z-50">
+        <ExportPanel elements={excalidrawElements} />
+        <DemoGenerator elements={excalidrawElements} />
+      </div>
+
+
+      {/* 3) Floating chat - positioned to not interfere with new components */}
+      <FloatingCedarChat
+        side="right"
+        title="🧠 UML AI Assistant"
+        collapsedLabel="Chat with AI"
+      />
+
+      {/* 4) Optional: Element count indicator */}
+      {excalidrawElements.length > 0 && (
+        <div className="absolute bottom-4 left-4 z-40">
+          <div className="bg-black/70 text-white px-3 py-1 rounded-full text-sm">
+            📊 {excalidrawElements.length} elements on canvas
+          </div>
+        </div>
+      )}
     </div>
   );
 }

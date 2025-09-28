@@ -6,6 +6,10 @@ import {
 import { streamJSONEvent } from '../../utils/streamUtils';
 import { z } from 'zod';
 
+// Import LLM-powered tools
+import { llmExportTool } from './llmExportTool';
+import { llmDemoGenerationTool } from './llmDemoTool';
+
 // Define the schemas for our tools based on what we registered in page.tsx
 
 // Schema for the addNewTextLine frontend tool
@@ -861,6 +865,11 @@ export const TOOL_REGISTRY = {
     connectTablesArrowTool,
     addRelationshipArrowTool,
   },
+  // LLM-powered tools for export and generation
+  llmTools: {
+    llmExportTool,
+    llmDemoGenerationTool,
+  },
 };
 
 // Export all tools as an array for easy registration
@@ -872,4 +881,6 @@ export const ALL_TOOLS = [
   createDatabaseTableTool, // NEW
   connectTablesArrowTool, // NEW
   addRelationshipArrowTool, // NEW
+  llmExportTool, // LLM-powered export tool
+  llmDemoGenerationTool, // LLM-powered demo generation tool
 ];
