@@ -29,6 +29,7 @@
     "motion": "^12.23.12",
     "motion-plus-react": "^1.5.1",
     "next": "15.4.4",
+    "openai": "^5.23.1",
     "react": "19.1.0",
     "react-dom": "19.1.0",
     "react-markdown": "^10.1.0",
