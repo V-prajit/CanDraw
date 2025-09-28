@@ -31,6 +31,246 @@ export default function HomePage() {
     source: 'init',
     count: 0
   });
+  
+  React.useEffect(() => {
+    console.log("hifdlsnfsekdjbnfdskbnfdskjn")
+    if (!excalidrawElements || excalidrawElements.length === 0) {
+      return;
+    }
+  
+    // Step 2: Find all arrows and rectangles in the current elements
+    const arrows = excalidrawElements.filter(el => el && el.type === 'arrow');
+    const rectangles = excalidrawElements.filter(el => el && el.type === 'rectangle');
+  
+    if (arrows.length === 0 || rectangles.length === 0) {
+      return; // No arrows or rectangles to process
+    }
+
+    const findClosestRectangle = (x: number, y: number, excludeRect?: any) => {
+      let closestRect = null;
+      let closestDistance = Infinity;
+  
+      for (const rect of rectangles) {
+        if (excludeRect && rect.id === excludeRect.id) continue;
+        
+        // Calculate distance to rectangle center
+        const rectCenterX = rect.x + rect.width / 2;
+        const rectCenterY = rect.y + rect.height / 2;
+        const distance = Math.sqrt(
+          Math.pow(x - rectCenterX, 2) + Math.pow(y - rectCenterY, 2)
+        );
+  
+        if (distance < closestDistance) {
+          closestDistance = distance;
+          closestRect = rect;
+        }
+      }
+  
+      return closestRect;
+    };
+
+    const getEdgeCenterPoint = (rect: any, targetX: number, targetY: number) => {
+      const rectCenterX = rect.x + rect.width / 2;
+      const rectCenterY = rect.y + rect.height / 2;
+      
+      // Calculate relative position to determine which edge is closest
+      const dx = targetX - rectCenterX;
+      const dy = targetY - rectCenterY;
+      
+      // Determine which edge based on the aspect ratio of the offset
+      if (Math.abs(dx) / rect.width > Math.abs(dy) / rect.height) {
+        // Horizontal edge is closer
+        if (dx > 0) {
+          // Right edge
+          return { x: rect.x + rect.width, y: rectCenterY };
+        } else {
+          // Left edge
+          return { x: rect.x, y: rectCenterY };
+        }
+      } else {
+        // Vertical edge is closer
+        if (dy > 0) {
+          // Bottom edge
+          return { x: rectCenterX, y: rect.y + rect.height };
+        } else {
+          // Top edge
+          return { x: rectCenterX, y: rect.y };
+        }
+      }
+    };
+
+    const calculateBindingFocus = (rect: any, arrowEnd: { x: number, y: number }) => {
+    const rectCenterX = rect.x + rect.width / 2;
+    const rectCenterY = rect.y + rect.height / 2;
+    const dx = arrowEnd.x - rectCenterX;
+    const dy = arrowEnd.y - rectCenterY;
+
+    // Determine which edge and calculate focus
+    if (Math.abs(dx) / rect.width > Math.abs(dy) / rect.height) {
+      // Vertical edge (left or right)
+      return dy / rect.height; // Focus along the vertical edge
+    } else {
+      // Horizontal edge (top or bottom)  
+      return dx / rect.width; // Focus along the horizontal edge
+    }
+  };
+
+    let hasChanges = false;
+    const updatedElements = excalidrawElements.map(element => {
+    if (element.type !== 'arrow') {
+      return element; // Keep non-arrow elements unchanged
+    }
+
+    // Step 7: Extract arrow points (format: [[x1,y1], [x2,y2]])
+    const points = element.points;
+    if (!points || !Array.isArray(points) || points.length < 2) {
+      console.warn('Arrow has invalid points:', element.id);
+      return element;
+    }
+
+    // Step 8: Calculate current world coordinates
+    const startPoint = points[0];
+    const endPoint = points[1];
+    
+    if (!startPoint || !endPoint || !Array.isArray(startPoint) || !Array.isArray(endPoint)) {
+      console.warn('Arrow points are invalid:', element.id, points);
+      return element;
+    }
+
+    const currentStartX = element.x + startPoint[0];
+    const currentStartY = element.y + startPoint[1];
+    const currentEndX = element.x + endPoint[0];
+    const currentEndY = element.y + endPoint[1];
+
+    // Step 9: Find rectangles for start and end points
+    const startRect = findClosestRectangle(currentStartX, currentStartY);
+    const endRect = findClosestRectangle(currentEndX, currentEndY, startRect);
+
+    if (!startRect || !endRect) {
+      return element; // Keep arrow unchanged if we can't find rectangles
+    }
+
+    // Step 10: Calculate snapped edge center positions
+    const startEdgePoint = getEdgeCenterPoint(startRect, currentEndX, currentEndY);
+    const endEdgePoint = getEdgeCenterPoint(endRect, currentStartX, currentStartY);
+
+    console.log("startEdgePoint:", startEdgePoint);
+    console.log("endEdgePoint:", endEdgePoint);
+
+    const newArrowX = startEdgePoint.x;
+    const newArrowY = startEdgePoint.y;
+    
+    // Points are relative to arrow's x,y position
+    const newPoints = [
+      [0, 0], // Start point is always at arrow's origin
+      [endEdgePoint.x - newArrowX, endEdgePoint.y - newArrowY] // End point relative to start
+    ];
+
+    // Calculate new width and height
+    const newWidth = Math.abs(newPoints[1][0]);
+    const newHeight = Math.abs(newPoints[1][1]);
+
+    console.log("newArrowX:", newArrowX);
+    console.log("newArrowY:", newArrowY);
+    console.log("newPoints:", newPoints);
+    console.log("newWidth:", newWidth);
+    console.log("newHeight:", newHeight);
+
+    const tolerance = 2;
+    const needsUpdate = 
+      Math.abs(element.x - newArrowX) > tolerance ||
+      Math.abs(element.y - newArrowY) > tolerance ||
+      Math.abs(endPoint[0] - newPoints[1][0]) > tolerance ||
+      Math.abs(endPoint[1] - newPoints[1][1]) > tolerance;
+
+    if (!needsUpdate) {
+      return element; // Arrow is already properly positioned
+    }
+
+    hasChanges = true;
+    const startFocus = calculateBindingFocus(startRect, endEdgePoint);
+    const endFocus = calculateBindingFocus(endRect, startEdgePoint);
+
+    // Step 14: Create updated arrow with proper bindings
+    const updatedArrow = {
+      ...element,
+      x: newArrowX,
+      y: newArrowY,
+      width: newWidth,
+      height: newHeight,
+      points: newPoints,
+      startBinding: {
+        elementId: startRect.id,
+        focus: Math.max(-0.5, Math.min(0.5, startFocus)), // Clamp focus to valid range
+        gap: 4
+      },
+      endBinding: {
+        elementId: endRect.id,
+        focus: Math.max(-0.5, Math.min(0.5, endFocus)), // Clamp focus to valid range
+        gap: 4
+      },
+      version: (element.version || 1) + 1,
+      versionNonce: Math.floor(Math.random() * 2147483647),
+    };
+    console.log(`🎯 Snapping arrow ${element.id} from (${element.x.toFixed(1)}, ${element.y.toFixed(1)}) to (${newArrowX.toFixed(1)}, ${newArrowY.toFixed(1)})`);
+
+    return updatedArrow;
+  });
+
+  const deduplicatedElements = (() => {
+    const nonArrowElements = updatedElements.filter(el => el.type !== 'arrow');
+    const arrowElements = updatedElements.filter(el => el.type === 'arrow');
+    
+    if (arrowElements.length <= 1) {
+      return updatedElements; // No need to deduplicate if there's 0 or 1 arrow
+    }
+  
+    // Create a map to track connections between rectangles
+    const connectionMap = new Map<string, any>();
+    const arrowsToKeep: any[] = [];
+  
+    for (const arrow of arrowElements) {
+      // Get the rectangle IDs this arrow connects
+      const startRectId = arrow.startBinding?.elementId;
+      const endRectId = arrow.endBinding?.elementId;
+  
+      if (!startRectId || !endRectId) {
+        // Keep arrows that don't have proper bindings
+        arrowsToKeep.push(arrow);
+        continue;
+      }
+  
+      // Create a connection key (order-independent)
+      const connectionKey = [startRectId, endRectId].sort().join('->');
+      
+      const existingArrow = connectionMap.get(connectionKey);
+      
+      if (!existingArrow) {
+        // First arrow for this connection - keep it
+        connectionMap.set(connectionKey, arrow);
+        arrowsToKeep.push(arrow);
+      } else {
+        // Duplicate connection found
+        console.log(`🗑️ Removing duplicate arrow ${arrow.id} connecting ${startRectId} -> ${endRectId} (keeping ${existingArrow.id})`);
+        hasChanges = true;
+        // Don't add to arrowsToKeep (effectively removing it)
+      }
+    }
+    const removedCount = arrowElements.length - arrowsToKeep.length;
+    if (removedCount > 0) {
+      console.log(`🧹 Removed ${removedCount} duplicate arrow(s). Kept ${arrowsToKeep.length} unique connections.`);
+    }
+
+    return [...nonArrowElements, ...arrowsToKeep];
+  })();
+
+  if (hasChanges) {
+    console.log('🎯 Snapping arrows to rectangle edge centers');
+    // setExcalidrawElements(updatedElements);
+    setExcalidrawElements(deduplicatedElements);
+  }
+
+  }, [excalidrawElements]);
 
   // Debug: Log when React state changes
   React.useEffect(() => {
