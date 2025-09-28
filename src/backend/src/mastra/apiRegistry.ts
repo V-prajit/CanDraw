@@ -5,6 +5,7 @@ import { VoiceInputSchema } from './workflows/voiceWorkflowTypes';
 import { zodToJsonSchema } from 'zod-to-json-schema';
 import { createSSEStream } from '../utils/streamUtils';
 import OpenAI from 'openai';
+import { starterAgent } from './agents/starterAgent';
 
 // Helper function to convert Zod schema to OpenAPI schema
 function toOpenApiSchema(schema: Parameters<typeof zodToJsonSchema>[0]) {
@@ -34,7 +35,7 @@ ANALYSIS FOCUS:
 - Foreign key patterns: Fields ending in '_id' that reference other tables
 
 OUTPUT REQUIREMENTS:
-Return ONLY valid JSON with this exact structure:
+Return ONLY valid JSON with this exact structure. Do not include markdown formatting, code blocks, or any other text - just the raw JSON object:
 {
   "tables": [
     {
@@ -71,7 +72,8 @@ Return ONLY valid JSON with this exact structure:
 }
 
 IMPORTANT:
-- Return ONLY the JSON object, no other text
+- Return ONLY the JSON object, no other text, no markdown, no explanations
+- Do not wrap in markdown code blocks - just return the raw JSON
 - Ensure all SQL is valid SQLite syntax
 - Use appropriate data types (INTEGER, TEXT, VARCHAR, BOOLEAN, TIMESTAMP)
 - Include proper constraints (PRIMARY KEY, UNIQUE, NOT NULL, FOREIGN KEY)
@@ -257,58 +259,68 @@ export const apiRoutes = [
 
         console.log('✅ Found', relevantElements.length, 'relevant elements');
 
-        // Mock successful response for now
-        const mockResult = {
-          tables: [
-            {
-              name: "User",
-              fields: [
-                { name: "id", type: "INTEGER", isPrimaryKey: true, isRequired: true },
-                { name: "email", type: "VARCHAR(255)", isPrimaryKey: false, isRequired: true, isUnique: true },
-                { name: "name", type: "TEXT", isPrimaryKey: false, isRequired: true }
-              ],
-              position: { x: 100, y: 100 }
-            },
-            {
-              name: "Posts",
-              fields: [
-                { name: "id", type: "INTEGER", isPrimaryKey: true, isRequired: true },
-                { name: "user_id", type: "INTEGER", isPrimaryKey: false, isRequired: true },
-                { name: "title", type: "TEXT", isPrimaryKey: false, isRequired: true },
-                { name: "content", type: "TEXT", isPrimaryKey: false, isRequired: false }
-              ],
-              position: { x: 400, y: 100 }
-            }
-          ],
-          relationships: [
-            {
-              from: "User",
-              to: "Posts",
-              type: "one-to-many",
-              foreignKey: "user_id",
-              description: "One user can have many posts"
-            }
-          ],
-          sql: `CREATE TABLE User (
-  id INTEGER PRIMARY KEY AUTOINCREMENT,
-  email VARCHAR(255) UNIQUE NOT NULL,
-  name TEXT NOT NULL
-);
+        let result;
 
-CREATE TABLE Posts (
-  id INTEGER PRIMARY KEY AUTOINCREMENT,
-  user_id INTEGER NOT NULL,
-  title TEXT NOT NULL,
-  content TEXT,
-  FOREIGN KEY (user_id) REFERENCES User(id)
-);`,
-          description: "A simple social media database with users and their posts. Each user can create multiple posts, establishing a one-to-many relationship."
-        };
+        try {
+          // Use Mastra agent to extract database schema from canvas elements
+          console.log('🤖 Calling Mastra agent for extraction...');
+          const prompt = buildExtractionPrompt(relevantElements);
+
+          const response = await starterAgent.generateVNext(prompt, {
+            modelSettings: {
+              temperature: 0.1, // Low temperature for consistent output
+              maxOutputTokens: 2000,
+            },
+            tools: {}, // Disable tools to force direct JSON generation
+          });
+
+          console.log('🔍 Full response object:', JSON.stringify(response, null, 2));
+
+          // Handle different response formats for generateVNext
+          let responseText = '';
+          if (response.content) {
+            responseText = response.content;
+          } else if (response.text) {
+            responseText = response.text;
+          } else if (typeof response === 'string') {
+            responseText = response;
+          } else {
+            console.error('❌ Unknown response format:', response);
+            throw new Error('Unknown response format from generateVNext');
+          }
+
+          console.log('📝 Agent Response:', responseText.substring(0, 200) + '...');
+
+          // Extract JSON from response (handle markdown code blocks)
+          let jsonText = responseText;
+          const jsonMatch = responseText.match(/```json\s*([\s\S]*?)\s*```/);
+          if (jsonMatch) {
+            jsonText = jsonMatch[1];
+            console.log('📄 Extracted JSON from markdown code block');
+          }
+
+          // Parse the JSON response
+          try {
+            result = JSON.parse(jsonText);
+            console.log('✅ Successfully parsed agent response');
+          } catch (parseError) {
+            console.error('❌ Failed to parse agent response as JSON:', parseError);
+            console.log('🔍 Response text for debugging:', responseText.substring(0, 500));
+            console.log('🔄 Using fallback extraction...');
+            result = await fallbackExtraction(relevantElements);
+          }
+
+        } catch (error) {
+          console.error('❌ Agent call failed:', error);
+          console.log('🔄 Using fallback extraction...');
+          result = await fallbackExtraction(relevantElements);
+        }
 
         return c.json({
           success: true,
-          exportData: mockResult,
-          elementCount: relevantElements.length
+          exportData: result,
+          elementCount: relevantElements.length,
+          isLLMGenerated: !result.isFallback
         });
 
       } catch (error) {
